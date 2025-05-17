@@ -9,6 +9,7 @@ import ProjectsSection from './pages/components/ProjectsSection';
 import ContactSection from './pages/components/ContactSection';
 import Footer from './pages/components/Footer';
 import SignIn from './auth/Signin';
+import SignUp from './auth/signup';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             }
           />
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
           </Routes>
         
       </div>
