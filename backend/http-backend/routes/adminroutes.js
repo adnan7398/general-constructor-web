@@ -1,5 +1,9 @@
-const { profile } = require("console");
-
+import Admin from "../models/admin.js";
+import express from "express"
+import  bcrypt from "bcryptjs"
+import  jwt from "jsonwebtoken"
+import {z} from "zod";
+const userRouter = express.Router();
 userRouter.post("/signup", async function (req, res) {
     const requirebody = z.object({
         email: z.string().min(3).max(50).email(),
@@ -33,7 +37,7 @@ userRouter.post("/signup", async function (req, res) {
     try {
         const hashpassword = await bcrypt.hash(password, 5);
         //const profileImage = req.file ? /uploads/${ req.file.filename }: null;
-        await UserModel.create({
+        await Admin.create({
             email: email,
             password: hashpassword,
             name: name,
@@ -55,7 +59,7 @@ userRouter.post("/signup", async function (req, res) {
 userRouter.post("/signin", async function (req, res) {
     const email = req.body.email;
     const password = req.body.password;
-    const response = await UserModel.findOne({
+    const response = await Admin.findOne({
         email: email
     })
     if (!response) {
@@ -87,3 +91,5 @@ userRouter.post("/signin", async function (req, res) {
         })
     }
 })
+
+export default userRouter;
