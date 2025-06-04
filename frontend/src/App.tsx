@@ -9,7 +9,7 @@ import ProjectsSection from './pages/components/ProjectsSection';
 import ContactSection from './pages/components/ContactSection';
 import Footer from './pages/components/Footer';
 import SignIn from './auth/Signin';
-import SignUp from './auth/signup';
+import Dashboard from './adminpages/pages/Dashboard'; // Adjust the import path as necessary
 
 function App() {
   return (
@@ -19,8 +19,7 @@ function App() {
           <Route
             path="/"
             element={
-              <>
-                
+              <>              
                 <Navbar />
                 <HeroSection />
                 <AboutSection />
@@ -33,9 +32,9 @@ function App() {
             }
           />
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          </Routes>
-        
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Add more routes as needed */}
+        </Routes>
       </div>
     </Router>
   );
