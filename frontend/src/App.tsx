@@ -11,6 +11,7 @@ import Footer from './pages/components/Footer';
 import SignIn from './auth/Signin';
 import Dashboard from './adminpages/pages/Dashboard'; // Adjust the import path as necessary
 import Projects from '../src/adminpages/pages/projects'; // Adjust the import path as necessary 
+import TeamMembers from './adminpages/pages/teammember';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/project" element={<Projects />} />
+         < Route path="/team" element={<TeamMembers/>}/>
           {/* Add more routes as needed */}
         </Routes>
       </div>

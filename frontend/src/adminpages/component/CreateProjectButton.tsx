@@ -26,7 +26,7 @@ const CreateProjectButton: React.FC = () => {
       await addProject({
         name,
         projectType,
-        status: 'ongoing', // default status
+        status: 'ongoing', 
         startDate,
         budget: Number(budget),
         description,

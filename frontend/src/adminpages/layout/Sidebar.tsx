@@ -8,6 +8,7 @@ import {
   HardHat, 
   BarChart, 
   Settings, 
+  Group as TeamMember,
   X
 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { name: 'Projects', icon: <Building className="h-5 w-5" />, href: '/project' },
     { name: 'Tasks', icon: <CheckSquare className="h-5 w-5" />, href: '/tasks' },
     { name: 'Budgets', icon: <DollarSign className="h-5 w-5" />, href: '/budgets' },
+    { name: 'TeamMember', icon: <TeamMember className="h-5 w-5" />, href: '/team' },
     { name: 'Resources', icon: <HardHat className="h-5 w-5" />, href: '/resources' },
     { name: 'Reports', icon: <BarChart className="h-5 w-5" />, href: '/reports' },
     { name: 'Settings', icon: <Settings className="h-5 w-5" />, href: '/settings' },
