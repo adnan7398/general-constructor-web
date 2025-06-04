@@ -18,13 +18,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const navigationItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '#' },
-    { name: 'Projects', icon: <Building className="h-5 w-5" />, href: '#' },
-    { name: 'Tasks', icon: <CheckSquare className="h-5 w-5" />, href: '#' },
-    { name: 'Budgets', icon: <DollarSign className="h-5 w-5" />, href: '#' },
-    { name: 'Resources', icon: <HardHat className="h-5 w-5" />, href: '#' },
-    { name: 'Reports', icon: <BarChart className="h-5 w-5" />, href: '#' },
-    { name: 'Settings', icon: <Settings className="h-5 w-5" />, href: '#' },
+    { name: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '/' },
+    { name: 'Projects', icon: <Building className="h-5 w-5" />, href: '/project' },
+    { name: 'Tasks', icon: <CheckSquare className="h-5 w-5" />, href: '/tasks' },
+    { name: 'Budgets', icon: <DollarSign className="h-5 w-5" />, href: '/budgets' },
+    { name: 'Resources', icon: <HardHat className="h-5 w-5" />, href: '/resources' },
+    { name: 'Reports', icon: <BarChart className="h-5 w-5" />, href: '/reports' },
+    { name: 'Settings', icon: <Settings className="h-5 w-5" />, href: '/settings' },
   ];
 
   return (
