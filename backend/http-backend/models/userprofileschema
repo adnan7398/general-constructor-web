@@ -1,0 +1,20 @@
+
+const mongoose = require("mongoose");
+
+const userProfileSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  role: { type: String, enum: ["Worker", "Manager", "Client"], required: true },
+  phone: { type: String },
+  email: { type: String },
+  address: { type: String },
+  projectAssigned: { type: String },
+  joinedDate: { type: Date, default: Date.now },
+  notes: { type: String },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin", // assuming you have an Admin model
+    required: true,
+  },
+});
+
+module.exports = mongoose.model("UserProfile", userProfileSchema);
