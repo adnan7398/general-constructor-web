@@ -18,7 +18,6 @@ export interface Project {
 }
 
 const API_BASE_URL = 'http://localhost:3000/project';
-
 // ✅ GET pending (ongoing + upcoming)
 export const getPendingProjects = async (): Promise<Project[]> => {
   const response = await axios.get(`${API_BASE_URL}/pending`);
