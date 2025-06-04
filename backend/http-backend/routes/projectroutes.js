@@ -2,7 +2,6 @@ import express from 'express';
 import Project from '../models/project.js';
 const projectRoutes = express.Router();
 projectRoutes.post('/add', async (req, res) => {
-    
     try {
       const newProject = new Project(req.body);
       const saved = await newProject.save();
