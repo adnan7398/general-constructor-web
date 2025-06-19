@@ -2,7 +2,28 @@ import express from 'express';
 const accountRoutes = express.Router();
 import SiteAccount from '../models/siteaccounthistory.js';
 
-// ✅ POST: Add entries to a site
+accountRoutes.post('/newsite', async (req, res) => {
+  try {
+    const { siteName } = req.body;
+
+    if (!siteName) {
+      return res.status(400).json({ error: 'siteName is required' });
+    }
+
+    const existing = await SiteAccount.findOne({ siteName });
+    if (existing) {
+      return res.status(409).json({ error: 'Site already exists' });
+    }
+
+    const newSite = new SiteAccount({ siteName, entries: [] });
+    await newSite.save();
+
+    res.status(201).json({ message: 'Site created successfully', site: newSite });
+  } catch (err) {
+    console.error('Error creating site:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 accountRoutes.post('/', async (req, res) => {
   try {
     const { siteName, entries } = req.body;
