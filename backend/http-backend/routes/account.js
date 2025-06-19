@@ -1,77 +1,82 @@
-
 import express from 'express';
 const accountRoutes = express.Router();
-import Entry from '../models/siteaccounthistory.js';
+import SiteAccount from '../models/siteaccounthistory.js';
 
-// Create new entry
+// ✅ POST: Add entries to a site
 accountRoutes.post('/', async (req, res) => {
   try {
-    const entry = new Entry(req.body);
-    await entry.save();
-    res.status(201).json(entry);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+    const { siteName, entries } = req.body;
 
-// Get entries by month/year/site
-accountRoutes.get('/', async (req, res) => {
-  const { month, year, siteName } = req.query;
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0, 23, 59, 59);
+    if (!siteName || !Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ error: 'siteName and entries[] are required' });
+    }
 
-  try {
-    const entries = await Entry.find({
-      siteName,
-      date: { $gte: start, $lte: end }
-    }).sort({ date: 1 });
-    res.json(entries);
+    const updatedSite = await SiteAccount.findOneAndUpdate(
+      { siteName },
+      { $push: { entries: { $each: entries } } },
+      { new: true, upsert: true }
+    );
+
+    res.status(201).json({ message: 'Entries added successfully', site: updatedSite });
   } catch (err) {
+    console.error('Error adding entry:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Update entry
-accountRoutes.put('/:id', async (req, res) => {
+// ✅ GET: List all unique site names
+accountRoutes.get('/sites', async (req, res) => {
   try {
-    const updated = await Entry.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+    const siteNames = await SiteAccount.distinct('siteName');
+    res.json(siteNames);
+  } catch (error) {
+    console.error('Failed to fetch site names:', error);
+    res.status(500).json({ error: 'Failed to fetch site names' });
   }
 });
 
-// Delete entry
-accountRoutes.delete('/:id', async (req, res) => {
+// ✅ PUT: Update an entry by entryId OR add if not present
+accountRoutes.put('/:siteName', async (req, res) => {
   try {
-    await Entry.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted successfully' });
+    const { siteName } = req.params;
+    const { entryId, newEntry } = req.body;
+
+    if (!entryId || !newEntry) {
+      return res.status(400).json({ error: 'entryId and newEntry are required' });
+    }
+
+    const site = await SiteAccount.findOne({ siteName });
+
+    if (!site) return res.status(404).json({ error: 'Site not found' });
+
+    const index = site.entries.findIndex(entry => entry.id === entryId);
+
+    if (index === -1) {
+      site.entries.push(newEntry);
+    } else {
+      site.entries[index] = newEntry;
+    }
+
+    await site.save();
+
+    res.status(200).json({ message: 'Entry updated successfully', site });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Error updating or adding entry:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Summary
-accountRoutes.get('/summary', async (req, res) => {
-  const { month, year, siteName } = req.query;
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0, 23, 59, 59);
-
+// ✅ GET: Fetch all entries for a specific site
+accountRoutes.get('/:siteName', async (req, res) => {
   try {
-    const entries = await Entry.find({
-      siteName,
-      date: { $gte: start, $lte: end }
-    });
+    const { siteName } = req.params;
+    const site = await SiteAccount.findOne({ siteName });
 
-    const income = entries.filter(e => e.type === 'INCOME').reduce((sum, e) => sum + e.amount, 0);
-    const expense = entries.filter(e => e.type === 'EXPENSE').reduce((sum, e) => sum + e.amount, 0);
+    if (!site) return res.status(404).json({ error: 'Site not found' });
 
-    res.json({
-      totalIncome: income,
-      totalExpense: expense,
-      balance: income - expense
-    });
+    res.status(200).json(site.entries);
   } catch (err) {
+    console.error('Error fetching site data:', err);
     res.status(500).json({ error: err.message });
   }
 });

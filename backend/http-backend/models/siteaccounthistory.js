@@ -1,31 +1,19 @@
-// models/SiteAccountEntry.ts
 import mongoose from 'mongoose';
 
-const siteAccountEntrySchema = new mongoose.Schema({
-  date: {
-    type: Date,
-    required: true,
-  },
-  type: {
-    type: String,
-    enum: ['EXPENSE', 'INCOME'],
-    required: true,
-  },
-  category: {
-    type: String, // e.g., LABOUR, MATERIAL, BATTI, etc.
-    required: true,
-  },
-  description: {
-    type: String, // e.g., "SHANU BHAI", "CUTTER MACHINE"
-  },
-  amount: {
-    type: Number,
-    required: true,
-  },
-  siteName: {
-    type: String, // e.g., 'ERA', 'KHADRA NEW'
-    required: true,
-  },
-});
+const entrySchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  type: { type: String, enum: ['INCOME', 'EXPENSE'], required: true },
+  category: { type: String, required: true },
+  description: { type: String },
+  amount: { type: Number, required: true },
+  whoGive: { type: String },
+  paymentMode: { type: String },
+  location: { type: String }
+}, { _id: false });
 
-export default mongoose.model('Entry', siteAccountEntrySchema);
+const siteAccountSchema = new mongoose.Schema({
+  siteName: { type: String, required: true, unique: true },
+  entries: [entrySchema]
+}, { timestamps: true });
+
+export default mongoose.model('SiteAccount', siteAccountSchema);
