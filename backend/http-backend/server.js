@@ -8,6 +8,8 @@ import adminRoutes from "./routes/adminroutes.js"; // Note: Use `.js` extension
 import projectRoutes from "./routes/projectroutes.js";
 import TeamRouter from "./routes/teammember.js";
 import accountRoutes from "./routes/account.js"; // Assuming you have a route for site accounts
+import resourceRoutes from './routes/resources.js';
+
 const app = express();
 
 const allowedOrigins = [
@@ -30,6 +32,7 @@ app.use("/admin", adminRoutes);
 app.use("/project", projectRoutes);
 app.use("/team",TeamRouter);
 app.use("/account",accountRoutes);
+app.use('/resources', resourceRoutes);
 
 const PORT = process.env.PORT || 3000;
 console.log(`MongoDB URL : ${process.env.MONGO_URL}`);
