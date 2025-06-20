@@ -2,52 +2,70 @@
 import express from 'express';
 import Resource from '../models/resources.js'; // Adjust the path as necessary
 
-const router = express.Router();
+const resourcesrouter= express.Router();
+// routes/resources.js
+resourcesrouter.post('/', async (req, res) => {
+    try {
+      const {
+        name,
+        siteName,
+        type,
+        status,
+        location,
+        contactInfo,
+        cost,
+        startDate,
+        endDate,
+        description,
+        quantity,
+      } = req.body;
+  
+      const newResource = new Resource({
+        name,
+        siteName,
+        type,
+        status,
+        location,
+        cost,
+        startDate,
+        endDate,
+        description,
+        quantity,
+      });
+  
+      await newResource.save();
+      res.status(201).json({ success: true, resource: newResource });
+    } catch (err) {
+      console.error('Error creating resource:', err);
+      res.status(400).json({
+        error: 'Failed to create resource',
+        details: err
+      });
+    }
+  });
+  
+resourcesrouter.get('/', async (req, res) => {
+    try {
+      const resources = await Resource.find();
+      res.status(200).json(resources);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch resources', details: error });
+    }
+  });
 
-// Get all resources, grouped by site
-router.get('/', async (req, res) => {
-  try {
-    const all = await Resource.find().sort({ siteName: 1 });
-    const grouped = all.reduce((acc, resource) => {
-      if (!acc[resource.siteName]) acc[resource.siteName] = [];
-      acc[resource.siteName].push(resource);
-      return acc;
-    }, {});
-    res.json(grouped);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch resources' });
-  }
-});
-
-// Get resources for a specific site
-router.get('/:siteName', async (req, res) => {
-  try {
-    const resources = await Resource.find({ siteName: req.params.siteName });
-    res.json(resources);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch site resources' });
-  }
-});
-
-// Add new resource
-router.post('/', async (req, res) => {
-  try {
-    const resource = new Resource(req.body);
-    await resource.save();
-    res.status(201).json(resource);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to create resource', details: err });
-  }
-});
-
-// Optional: Delete a resource
-router.delete('/:id', async (req, res) => {
-  try {
-    await Resource.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to delete resource' });
-  }
-});
-
-export default router;
+resourcesrouter.get('/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resource = await Resource.findById(id);
+  
+      if (!resource) {
+        return res.status(404).json({ error: 'Resource not found' });
+      }
+  
+      res.status(200).json({ success: true, resource });
+    } catch (err) {
+      console.error('Error fetching resource:', err);
+      res.status(500).json({ error: 'Failed to fetch resource', details: err.message });
+    }
+  });  
+export default resourcesrouter;

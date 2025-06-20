@@ -13,6 +13,7 @@ import Dashboard from './adminpages/pages/Dashboard'; // Adjust the import path 
 import Projects from '../src/adminpages/pages/projects'; // Adjust the import path as necessary 
 import TeamMembers from './adminpages/pages/teammember';
 import SiteAccountPage from './adminpages/pages/account'
+import Resources from './adminpages/pages/resources';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/project" element={<Projects />} />
+          <Route path="/resources" element={<Resources/>} />
          < Route path="/team" element={<TeamMembers/>}/>
          <Route path='/account' element={<SiteAccountPage/>} />
           {/* Add more routes as needed */}

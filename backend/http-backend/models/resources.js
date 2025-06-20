@@ -2,30 +2,39 @@
 import mongoose from 'mongoose';
 
 const resourceSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
   siteName: {
     type: String,
     required: true,
     index: true,
   },
-  name: {
+  type: {
     type: String,
-    required: true,
+    enum: ['Material', 'Equipment', 'Labor', 'Vehicle', 'Other'],
+    default: 'Other',
   },
   quantity: {
     type: Number,
     required: true,
   },
-  unit: {
+  status: {
     type: String,
-    required: true,
-    enum: ['pcs', 'kg', 'litre', 'sqft', 'meter', 'bags', 'set', 'other'],
+    enum: ['Available', 'In Use', 'Pending', 'Completed', 'Damaged'],
+    default: 'Pending',
   },
-  description: {
-    type: String,
-    default: '',
+  location: String,
+  cost: {
+    type: Number,
+    default: 0,
   },
+  startDate: Date,
+  endDate: Date,
+  description: String,
 }, {
   timestamps: true
 });
 
-export default  mongoose.model('Resource', resourceSchema);
+export default mongoose.model('Resource', resourceSchema);
