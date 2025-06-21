@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   return (
     <>
-      {/* Mobile Sidebar */}
+    
       <div
         className={`fixed inset-0 z-40 flex lg:hidden ${
           isOpen ? 'visible' : 'invisible'
