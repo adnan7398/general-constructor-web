@@ -38,3 +38,7 @@ export const updateTeamMember = async (id: string, member: Partial<TeamMember>):
   const response = await axios.put(`${API_BASE_URL}/${id}`, member);
   return response.data;
 };
+export const fetchTeam = async (projectId: string): Promise<string[]> => {
+  const response = await axios.get(`${API_BASE_URL}/team/${projectId}`);
+  return response.data;
+}

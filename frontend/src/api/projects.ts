@@ -24,25 +24,29 @@ export const getPendingProjects = async (): Promise<Project[]> => {
   return response.data;
 };
 
-// ✅ GET completed
 export const getCompletedProjects = async (): Promise<Project[]> => {
   const response = await axios.get(`${API_BASE_URL}/completed`);
   return response.data;
 };
-
-// ✅ PUT complete project
+//complete project
 export const completeProject = async (id: string): Promise<void> => {
   await axios.put(`${API_BASE_URL}/complete/${id}`);
 };
-
-// ✅ POST new project
+// new project
 export const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
   const response = await axios.post(`${API_BASE_URL}/add`, project);
   return response.data.project;
 };
 
-// ✅ GET project by ID
+// project by ID
 export const getProjectById = async (id: string): Promise<Project> => {
   const response = await axios.get(`${API_BASE_URL}/${id}`);
   return response.data;
 };
+
+
+// team member of a specific prject 
+export const fetchTeam = async (projectId: string): Promise<string[]> => {
+  const response = await axios.get(`${API_BASE_URL}/team/${projectId}`);
+  return response.data;
+}

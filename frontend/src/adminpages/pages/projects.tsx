@@ -14,11 +14,23 @@ const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [team, setTeam] = useState<string[]>([]);
 
   useEffect(() => {
     loadProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+  useEffect(()=>{
+    const fetchTeam = async () => {
+      try {
+        const teamData = await getPendingProjects();
+        setTeam(teamData.map(member => member.name || 'Unnamed'));
+      } catch (error) {
+        console.error('Error fetching team members:', error);
+      }
+    };
+    fetchTeam();
+  })
 
   const loadProjects = async () => {
     setLoading(true);
@@ -161,6 +173,11 @@ const Projects: React.FC = () => {
                               <div className="text-sm text-gray-500">
                                 {project.description}
                               </div>
+                            )}
+                            {project.team && (
+                                <div className="text-sm text-gray-500">
+                                {team?.map((member) => member || 'Unnamed').join(', ')}
+                                </div>
                             )}
                           </div>
                         </div>
