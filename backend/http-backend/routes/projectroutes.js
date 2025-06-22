@@ -25,6 +25,15 @@ projectRoutes.post('/add', async (req, res) => {
       res.status(400).json({ error: err.message });
     }
   });
+  // get all projects by site name 
+  projectRoutes.get('/all', async (req, res) => {
+    try {
+      const projects = await Project.find({ status: { $in: ['ongoing', 'upcoming','completed'] } });
+      res.json(projects);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
   
   //  Get All Pending Projects (ongoing or upcoming)
   projectRoutes.get('/pending', async (req, res) => {

@@ -1,12 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { getTeamMembers, addTeamMember, deleteTeamMember } from '../../api/teammember';
-import { TeamMember } from '../../api/types';
 import { Plus, Trash2 } from 'lucide-react';
+interface TeamMember {
+  _id: string;
+  name: string;
+  role: 'Engineer' | 'Architect' | 'Contractor' | 'Manager' | 'Supervisor' | 'Worker';
+  contact: {
+    phone: string;
+    email: string;
+  };
+  profileImage: string;
+  assignedProject: string; // ObjectId as string
+  joinedDate: Date;
+  isActive: boolean;
+}
 
 const TeamMembers: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [form, setForm] = useState<Omit<TeamMember, '_id'>>({ name: '', role: '', email: '' });
+  const [form, setForm] = useState<Omit<TeamMember, '_id'>>({
+    name: '',
+    role: 'Engineer',
+    contact: {
+      phone: '',
+      email: ''
+    },
+    profileImage: '',
+    assignedProject: '', // Should be ObjectId string
+    joinedDate: new Date(),
+    isActive: true
+  });
+  
 
   useEffect(() => {
     fetchMembers();
@@ -19,7 +43,18 @@ const TeamMembers: React.FC = () => {
 
   const handleAdd = async () => {
     await addTeamMember(form);
-    setForm({ name: '', role: '', email: '' });
+    setForm({
+      name: '',
+      role: 'Engineer',
+      contact: {
+        phone: '',
+        email: ''
+      },
+      profileImage: '',
+      assignedProject: '', // Should be ObjectId string
+      joinedDate: new Date(),
+      isActive: true
+    });
     setIsOpen(false);
     fetchMembers();
   };
@@ -46,7 +81,7 @@ const TeamMembers: React.FC = () => {
           <div key={member._id} className="border p-4 rounded shadow-sm flex justify-between items-center">
             <div>
               <h2 className="font-medium">{member.name}</h2>
-              <p className="text-sm text-gray-600">{member.role} | {member.email}</p>
+              <p className="text-sm text-gray-600">{member.role} | {member.contact.email}</p>
             </div>
             <button onClick={() => handleDelete(member._id!)} className="text-red-500 hover:text-red-700">
               <Trash2 />
@@ -72,14 +107,50 @@ const TeamMembers: React.FC = () => {
                 type="text"
                 placeholder="Role"
                 value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                onChange={(e) => setForm({ ...form, role: e.target.value as TeamMember['role'] })}
                 className="w-full border p-2 rounded"
               />
               <input
                 type="email"
                 placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                value={form.contact.email}
+                onChange={(e) => setForm({ ...form, contact: { ...form.contact, email: e.target.value } })}
+                className="w-full border p-2 rounded"
+              />
+               <input
+                type="tel"
+                pattern="[0-9]{10}"
+                placeholder="10-digit number"
+                value={form.contact.phone}
+                onChange={(e) => setForm({ ...form, contact: { ...form.contact, phone: e.target.value } })}
+                className="w-full border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Role"
+                value={form.profileImage}
+                onChange={(e) => setForm({ ...form, profileImage: e.target.value })}
+                className="w-full border p-2 rounded"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={form.assignedProject}
+                onChange={(e) => setForm({ ...form, assignedProject: e.target.value })}
+                className="w-full border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Name"
+                value={form.joinedDate.toISOString().split('T')[0]}
+                onChange={(e) => setForm({ ...form, joinedDate: new Date(e.target.value) })}
+                className="w-full border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Role"
+                value={form.isActive ? 'Active' : 'Inactive'}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
                 className="w-full border p-2 rounded"
               />
             </div>

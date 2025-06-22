@@ -61,4 +61,15 @@ TeamRouter.delete('/:id', async (req, res) => {
   }
 });
 
+// get project by team member id
+TeamRouter.get('/project/:id', async (req, res) => {
+  try {
+    const teamMember = await TeamMember.findById(req.params.id).populate('assignedProject');
+    if (!teamMember) return res.status(404).json({ message: 'Team Member not found' });
+    res.json(teamMember.assignedProject);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default TeamRouter;
