@@ -12,7 +12,7 @@ const userProfileSchema = new mongoose.Schema({
   notes: { type: String },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin", // assuming you have an Admin model
+    ref: "Admin", 
     required: true,
   },
 });
