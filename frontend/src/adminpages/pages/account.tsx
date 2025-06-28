@@ -5,7 +5,7 @@ interface AccountEntry {
   date: string;
   category: string;
   amount: number;
-  whoGive?: string;
+  Quantity?: number;
   paymentMode?: string;
   description?: string;
   type: 'INCOME' | 'EXPENSE';
@@ -233,7 +233,7 @@ export default function SiteAccountPage() {
                         ₹{entry.amount ? entry.amount.toLocaleString('en-IN') : 0}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-slate-700">{entry.whoGive || '-'}</td>
+                    <td className="py-4 px-6 text-slate-700">{entry.Quantity || '-'}</td>
                     <td className="py-4 px-6 text-slate-700">{entry.paymentMode || '-'}</td>
                     <td className="py-4 px-6 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -318,12 +318,13 @@ export default function SiteAccountPage() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  Who Give
+                  Qauntity
                 </label>
                 <input 
-                  placeholder="Person or organization" 
+                  placeholder="Quantity"
+                  type="number" 
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, whoGive: e.target.value })} 
+                  onChange={(e) => setNewEntry({ ...newEntry, Quantity: Number(e.target.value )})} 
                 />
               </div>
               
