@@ -216,7 +216,7 @@ export default function SiteAccountPage() {
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Date</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Particular</th>
                   <th className="text-right py-4 px-6 font-semibold text-slate-700 text-sm">Amount</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Who Give</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Quantity</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Payment Mode</th>
                   <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Type</th>
                 </tr>

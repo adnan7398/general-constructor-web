@@ -40,7 +40,7 @@ function App() {
           <Route path="/project" element={<Projects />} />
           <Route path="/resources" element={<Resources/>} />
          < Route path="/team" element={<TeamMembers/>}/>
-         <Route path='/account' element={<SiteAccountPage/>} />
+         <Route path='/budgets' element={<SiteAccountPage/>} />
           {/* Add more routes as needed */}
         </Routes>
       </div>
