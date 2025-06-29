@@ -45,7 +45,7 @@ accountRoutes.post('/', async (req, res) => {
   }
 });
 
-// ✅ GET: List all unique site names
+// GET: List all unique site names
 accountRoutes.get('/sites', async (req, res) => {
   try {
     const siteNames = await SiteAccount.distinct('siteName');
@@ -56,7 +56,7 @@ accountRoutes.get('/sites', async (req, res) => {
   }
 });
 
-// ✅ PUT: Update an entry by entryId OR add if not present
+//  Update an entry by entryId OR add if not present
 accountRoutes.put('/:siteName', async (req, res) => {
   try {
     const { siteName } = req.params;
@@ -86,8 +86,37 @@ accountRoutes.put('/:siteName', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+accountRoutes.delete('/:siteName/:entryId', async (req, res) => {
+  try {
+    const { siteName, entryId } = req.params;
 
-// ✅ GET: Fetch all entries for a specific site
+    if (!entryId) {
+      return res.status(400).json({ error: 'entryId is required' });
+    }
+
+    const site = await SiteAccount.findOne({ siteName });
+
+    if (!site) return res.status(404).json({ error: 'Site not found' });
+
+    const entryIndex = site.entries.findIndex(entry => entry.id === entryId);
+
+    if (entryIndex === -1) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    site.entries.splice(entryIndex, 1);
+    await site.save({validateBeforeSave: false});
+    // Alternatively, i can use:  
+    // await SiteAccount.updateOne({ siteName }, { $pull: { entries: { id: entryId } } });
+
+    res.status(200).json({ message: 'Entry deleted successfully', site });
+  } catch (err) {
+    console.error('Error deleting entry:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//  Fetch all entries for a specific site
 accountRoutes.get('/:siteName', async (req, res) => {
   try {
     const { siteName } = req.params;

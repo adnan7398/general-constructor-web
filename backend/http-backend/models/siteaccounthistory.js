@@ -9,7 +9,7 @@ const entrySchema = new mongoose.Schema({
   whoGive: { type: String },
   paymentMode: { type: String },
   location: { type: String }
-}, { _id: false });
+}, { _id: true });
 
 const siteAccountSchema = new mongoose.Schema({
   siteName: { type: String, required: true, unique: true },

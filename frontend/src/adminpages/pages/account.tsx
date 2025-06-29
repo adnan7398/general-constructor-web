@@ -80,6 +80,8 @@ export default function SiteAccountPage() {
     }
   };
 
+  
+
   const income = entries.filter((e) => e.type === 'INCOME').reduce((sum, e) => sum + e.amount, 0);
   const expense = entries.filter((e) => e.type === 'EXPENSE').reduce((sum, e) => sum + e.amount, 0);
   const closingBalance = income - expense;
