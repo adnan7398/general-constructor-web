@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Building2, TrendingUp, TrendingDown, Plus, X, Calendar, Receipt, User, CreditCard } from 'lucide-react';
 
 interface AccountEntry {
+  _id?: string;
+  siteName?: string;
   date: string;
-  category: string;
+  particular: string;
   amount: number;
   Quantity?: number;
   paymentMode?: string;
@@ -12,6 +14,14 @@ interface AccountEntry {
 }
 
 export default function SiteAccountPage() {
+  const [filters, setFilters] = useState({
+    particular: '',
+    minAmount: 0,
+    maxAmount: Infinity,
+    type: '',
+    minQuantity: 0,
+  });
+  
   const [entries, setEntries] = useState<AccountEntry[]>([]);
   const [availableSites, setAvailableSites] = useState<string[]>([]);
   const [siteName, setSiteName] = useState('');
@@ -47,6 +57,31 @@ export default function SiteAccountPage() {
     };
     fetchEntries();
   }, [siteName]);
+  const filteredEntries = entries.filter(entry => {
+    return (
+      (!filters.particular || entry.particular?.toLowerCase().includes(filters.particular.toLowerCase())) &&
+      (entry.amount >= filters.minAmount) &&
+      (entry.amount <= filters.maxAmount) &&
+      (!filters.type || entry.type === filters.type) &&
+      (entry.Quantity === undefined || entry.Quantity >= filters.minQuantity)
+    );
+  });
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: name === 'minAmount' || name === 'maxAmount' || name === 'minQuantity' ? Number(value) : value
+    }));
+  };
+  const resetFilters = () => {
+    setFilters({
+      particular: '',
+      minAmount: 0,
+      maxAmount: Infinity,
+      type: '',
+      minQuantity: 0,
+    });
+  };  
 
   const addSite = async () => {
     if (!newSite.trim()) return;
@@ -64,6 +99,56 @@ export default function SiteAccountPage() {
       console.error('Failed to add site:', err);
     }
   };
+  const deleteSite = async (site: string) => {
+    if (!site) return;
+    try {
+      await fetch(`http://localhost:3000/account/deletesite/${site}`, {
+        method: 'DELETE',
+      });
+      setAvailableSites(prev => prev.filter(s => s !== site));
+      if (siteName === site) {
+        setSiteName('');
+        setEntries([]);
+      }
+    } catch (err) {
+      console.error('Failed to delete site:', err);
+    }
+  };
+  const handleSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedSite = e.target.value;
+    setSiteName(selectedSite);  
+
+    if (selectedSite) {
+      const selectedEntries = entries.filter(entry => entry.particular === selectedSite);
+      setEntries(selectedEntries);
+    } else {
+      setEntries([]);
+    }
+  };
+  const handleNewEntryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewEntry(prev => ({
+      ...prev,
+      [name]: name === 'amount' || name === 'Quantity' ? Number(value) : value
+    }));
+  };
+
+  const deleteEntry = async (entryId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3000/account/${siteName}/${entryId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        console.log('Entry deleted successfully');
+        setEntries(prev => prev.filter(entry => entry._id !== entryId));
+      } else {
+        console.error('Failed to delete entry');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+  
 
   const handleAddEntry = async () => {
     try {
@@ -212,6 +297,48 @@ export default function SiteAccountPage() {
           </div>
 
           <div className="overflow-x-auto">
+          <div className="bg-white/90 p-4 rounded-xl mb-6 flex flex-wrap gap-4 items-center">
+                <input
+                  type="text"
+                  placeholder="Filter by particular"
+                  value={filters.particular}
+                  onChange={e => setFilters({ ...filters, particular: e.target.value })}
+                  className="border px-3 py-2 rounded-lg text-sm w-48"
+                />
+                <input
+                  type="number"
+                  placeholder="Min Amount"
+                  onChange={e => setFilters({ ...filters, minAmount: Number(e.target.value) || 0 })}
+                  className="border px-3 py-2 rounded-lg text-sm w-32"
+                />
+                <input
+                  type="number"
+                  placeholder="Max Amount"
+                  onChange={e => setFilters({ ...filters, maxAmount: Number(e.target.value) || Infinity })}
+                  className="border px-3 py-2 rounded-lg text-sm w-32"
+                />
+                <input
+                  type="number"
+                  placeholder="Min Quantity"
+                  onChange={e => setFilters({ ...filters, minQuantity: Number(e.target.value) || 0 })}
+                  className="border px-3 py-2 rounded-lg text-sm w-32"
+                />
+                <select
+                  onChange={e => setFilters({ ...filters, type: e.target.value as 'INCOME' | 'EXPENSE' | '' })}
+                  className="border px-3 py-2 rounded-lg text-sm w-36"
+                >
+                  <option value="">All Types</option>
+                  <option value="INCOME">Income</option>
+                  <option value="EXPENSE">Expense</option>
+                </select>
+                <button
+                  onClick={() => setFilters({ particular: '', minAmount: 0, maxAmount: Infinity, type: '', minQuantity: 0 })}
+                  className="text-sm text-blue-600 underline"
+                >
+                  Clear Filters
+                </button>
+              </div>
+
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
@@ -221,15 +348,17 @@ export default function SiteAccountPage() {
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Quantity</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Payment Mode</th>
                   <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Type</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Actions</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Delete</th>
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry, idx) => (
+                {filteredEntries.map((entry, idx) => (
                   <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50 transition-all duration-150">
                     <td className="py-4 px-6 text-slate-700">
                       {entry.date ? new Date(entry.date).toLocaleDateString('en-IN') : '-'}
                     </td>
-                    <td className="py-4 px-6 text-slate-700 font-medium">{entry.category || '-'}</td>
+                    <td className="py-4 px-6 text-slate-700 font-medium">{entry.particular || '-'}</td>
                     <td className="py-4 px-6 text-right">
                       <span className={`font-bold ${entry.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
                         ₹{entry.amount ? entry.amount.toLocaleString('en-IN') : 0}
@@ -246,6 +375,25 @@ export default function SiteAccountPage() {
                         {entry.type}
                       </span>
                     </td>
+                    <td className="py-4 px-6 text-center">
+                      <button
+                        onClick={() => {
+                          setNewEntry(entry);
+                          setShowModal(true);
+                        }}
+                        className="text-blue-500 hover:text-blue-700 font-medium text-sm"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <button
+                        onClick={() => deleteEntry(entry._id?.toString()||"")} // assuming _id exists
+                        className="text-red-500 hover:text-red-700 font-medium text-sm"
+                      >
+                        Delete  
+  </button>
+</td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
@@ -303,7 +451,7 @@ export default function SiteAccountPage() {
                 <input 
                   placeholder="Enter description" 
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })} 
+                  onChange={(e) => setNewEntry({ ...newEntry, particular: e.target.value })} 
                 />
               </div>
               
