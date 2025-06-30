@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Building2, TrendingUp, TrendingDown, Plus, X, Calendar, Receipt, User, CreditCard } from 'lucide-react';
-
+import {useNavigate } from 'react-router-dom';
 interface AccountEntry {
   _id?: string;
   siteName?: string;
@@ -22,7 +22,7 @@ export default function SiteAccountPage() {
     type: '',
     minQuantity: 0,
   });
-  
+    const navigator = useNavigate();
   const [entries, setEntries] = useState<AccountEntry[]>([]);
   const [availableSites, setAvailableSites] = useState<string[]>([]);
   const [siteName, setSiteName] = useState('');
@@ -129,7 +129,9 @@ export default function SiteAccountPage() {
     }
   };
   
-
+  const handleClick = () => {
+    navigator('/totalaccount');
+  }
   const handleAddEntry = async () => {
     try {
       await fetch('http://localhost:3000/account/', {
@@ -197,6 +199,13 @@ const expense = filteredEntries
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-all duration-200 whitespace-nowrap border border-blue-200"
               >
                 + Add New Site
+              </button>
+              <button
+                  onClick={handleClick}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 transition"
+                >
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-800">Total Account</span>
               </button>
             </div>
             

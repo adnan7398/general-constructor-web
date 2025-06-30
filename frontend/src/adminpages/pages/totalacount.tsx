@@ -11,8 +11,10 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { SiteAccount, Entry, SiteSummary } from '../../api/account';
+import { useNavigate } from 'react-router-dom';
 
 const Account: React.FC = () => {
+    const navigate = useNavigate();
   const [siteAccounts, setSiteAccounts] = useState<SiteAccount[]>([]);
   const [expandedSites, setExpandedSites] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
@@ -40,7 +42,9 @@ const Account: React.FC = () => {
 
     fetchData();
   }, []);
-
+  const handleClick = () => {
+    navigate('/budgets');
+  };
   const refreshData = async () => {
     setLoading(true);
     try {
@@ -149,6 +153,13 @@ const Account: React.FC = () => {
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
+            </button>
+            <button
+                onClick={handleClick}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 transition"
+                >
+                <Building2 className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-gray-800">My Account</span>
             </button>
           </div>
         </div>
@@ -299,7 +310,7 @@ const Account: React.FC = () => {
                                         {entry.type}
                                       </span>
                                     </td>
-                                    <td className="py-2">{entry.category || '-'}</td>
+                                    <td className="py-2">{entry.typeofExpense|| '-'}</td>
                                     <td className="py-2">{entry.particular || '-'}</td>
                                     <td className="py-2 text-right">{entry.Quantity}</td>
                                     <td className="py-2 text-right">{formatCurrency(entry.amount)}</td>

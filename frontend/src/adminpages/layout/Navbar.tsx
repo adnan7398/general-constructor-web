@@ -24,7 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
             </button>
             <div className="ml-4 flex lg:ml-0">
               <div className="flex items-center">
-                <span className="font-bold text-xl text-blue-600">Divine Developer</span>
+                <span className="font-bold text-xl text-blue-600"></span>
               </div>
             </div>
           </div>
