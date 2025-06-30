@@ -55,6 +55,14 @@ accountRoutes.get('/sites', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch site names' });
   }
 });
+accountRoutes.get('/site', async (req, res) => {
+  try {
+    const sites = await SiteAccount.find().populate('entries');
+    res.json(sites);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch sites' });
+  }
+});
 
 //  Update an entry by entryId OR add if not present
 accountRoutes.put('/:siteName', async (req, res) => {

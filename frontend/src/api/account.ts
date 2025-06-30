@@ -19,6 +19,7 @@ export interface Entry {
   }
   
   export interface SiteSummary {
+    siteId: string;
     siteName: string;
     openingBalance: number;
     totalIncome: number;
