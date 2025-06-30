@@ -11,6 +11,7 @@ interface AccountEntry {
   paymentMode?: string;
   description?: string;
   type: 'INCOME' | 'EXPENSE';
+  typeofExpense?: 'LABOUR' | 'MAINTENANCE';
 }
 
 export default function SiteAccountPage() {
@@ -166,9 +167,14 @@ export default function SiteAccountPage() {
   };
 
   
+  const income = filteredEntries
+  .filter((e) => e.type === 'INCOME')
+  .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  const income = entries.filter((e) => e.type === 'INCOME').reduce((sum, e) => sum + e.amount, 0);
-  const expense = entries.filter((e) => e.type === 'EXPENSE').reduce((sum, e) => sum + e.amount, 0);
+const expense = filteredEntries
+  .filter((e) => e.type === 'EXPENSE')
+  .reduce((sum, e) => sum + (e.amount || 0), 0);
+
   const closingBalance = income - expense;
   const currentMonthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -344,6 +350,7 @@ export default function SiteAccountPage() {
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Date</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Particular</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Type of Expense</th>
                   <th className="text-right py-4 px-6 font-semibold text-slate-700 text-sm">Amount</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Quantity</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Payment Mode</th>
@@ -359,6 +366,15 @@ export default function SiteAccountPage() {
                       {entry.date ? new Date(entry.date).toLocaleDateString('en-IN') : '-'}
                     </td>
                     <td className="py-4 px-6 text-slate-700 font-medium">{entry.particular || '-'}</td>
+                    <td className="py-4 px-6 text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        entry.typeofExpense === 'LABOUR' 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : 'bg-red-100 text-slate-700'
+                      }`}>
+                        {entry.typeofExpense || '-'}
+                      </span>
+                    </td>
                     <td className="py-4 px-6 text-right">
                       <span className={`font-bold ${entry.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
                         ₹{entry.amount ? entry.amount.toLocaleString('en-IN') : 0}
@@ -450,6 +466,8 @@ export default function SiteAccountPage() {
                 </label>
                 <input 
                   placeholder="Enter description" 
+                  value={newEntry.particular || ''}
+                  type="text"
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
                   onChange={(e) => setNewEntry({ ...newEntry, particular: e.target.value })} 
                 />
@@ -499,6 +517,17 @@ export default function SiteAccountPage() {
                   <option value="">Select Type</option>
                   <option value="INCOME">💰 Income</option>
                   <option value="EXPENSE">💸 Expense</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Expenses Type</label>
+                <select 
+                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
+                  onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MAINTENANCE' })}
+                >
+                  <option value="">Select Type</option>
+                  <option value="LABOUR"> Labour</option>
+                  <option value="MAINTENANCE"> Maintenance</option>
                 </select>
               </div>
             </div>
