@@ -6,11 +6,10 @@ const entrySchema = new mongoose.Schema({
   type: { type: String, enum: ['INCOME', 'EXPENSE'], required: true },
   typeofExpense: { type: String,enum :['LABOUR','MAINTENAINCE'], required: true },
   category: { type: String, required: true },
-  description: { type: String },
+  particular: { type: String },
   amount: { type: Number, required: true },
-  whoGive: { type: String },
+  Quantity: { type: String, required: true },
   paymentMode: { type: String },
-  location: { type: String }
 }, { _id: true });
 
 const siteAccountSchema = new mongoose.Schema({

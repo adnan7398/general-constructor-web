@@ -100,32 +100,11 @@ export default function SiteAccountPage() {
       console.error('Failed to add site:', err);
     }
   };
-  const deleteSite = async (site: string) => {
-    if (!site) return;
-    try {
-      await fetch(`http://localhost:3000/account/deletesite/${site}`, {
-        method: 'DELETE',
-      });
-      setAvailableSites(prev => prev.filter(s => s !== site));
-      if (siteName === site) {
-        setSiteName('');
-        setEntries([]);
-      }
-    } catch (err) {
-      console.error('Failed to delete site:', err);
-    }
-  };
   const handleSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedSite = e.target.value;
-    setSiteName(selectedSite);  
-
-    if (selectedSite) {
-      const selectedEntries = entries.filter(entry => entry.particular === selectedSite);
-      setEntries(selectedEntries);
-    } else {
-      setEntries([]);
-    }
+    setSiteName(e.target.value);
   };
+  
+
   const handleNewEntryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewEntry(prev => ({
@@ -454,6 +433,8 @@ const expense = filteredEntries
                 </label>
                 <input 
                   type="date" 
+                  value={newEntry.date || ''}
+                  placeholder="Select date"
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
                   onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })} 
                 />
@@ -478,6 +459,7 @@ const expense = filteredEntries
                 <input 
                   placeholder="0.00" 
                   type="number" 
+                  value={newEntry.amount || ''}
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
                   onChange={(e) => setNewEntry({ ...newEntry, amount: Number(e.target.value) })} 
                 />
@@ -491,6 +473,7 @@ const expense = filteredEntries
                 <input 
                   placeholder="Quantity"
                   type="number" 
+                  value={newEntry.Quantity || ''}
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
                   onChange={(e) => setNewEntry({ ...newEntry, Quantity: Number(e.target.value )})} 
                 />

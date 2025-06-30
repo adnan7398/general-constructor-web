@@ -14,6 +14,7 @@ import Projects from '../src/adminpages/pages/projects'; // Adjust the import pa
 import TeamMembers from './adminpages/pages/teammember';
 import SiteAccountPage from './adminpages/pages/account'
 import Resources from './adminpages/pages/resources';
+import Account from './adminpages/pages/totalacount';
 
 function App() {
   return (
@@ -41,7 +42,8 @@ function App() {
           <Route path="/resources" element={<Resources/>} />
          < Route path="/team" element={<TeamMembers/>}/>
          <Route path='/budgets' element={<SiteAccountPage/>} />
-          {/* Add more routes as needed */}
+         <Route path="/totalaccount" element={<Account />} />
+          {/* i can Add more routes as needed */}
         </Routes>
       </div>
     </Router>
