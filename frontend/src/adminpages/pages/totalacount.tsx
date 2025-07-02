@@ -163,8 +163,6 @@ const Account: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {/* Total Sites */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
