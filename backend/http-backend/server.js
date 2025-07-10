@@ -15,7 +15,8 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://arogyam.vercel.app"
+ 'https://general-constructor-web-hu2p.vercel.app',
+
 ];
 
 app.use(
