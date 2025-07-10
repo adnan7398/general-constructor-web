@@ -47,14 +47,13 @@ export const completeProject = async (id: string): Promise<void> => {
   );
 };
 export const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
-  const response = await axios.post(`${API_BASE_URL}/add`, project,{
+  const response = await axios.post(`${API_BASE_URL}/add`, project, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
     },
   });
   return response.data.project;
 };
-
 export const getProjectById = async (id: string): Promise<Project> => {
   const response = await axios.get(`${API_BASE_URL}/${id}`,{
     headers: {
