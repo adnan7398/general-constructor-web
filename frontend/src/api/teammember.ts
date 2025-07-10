@@ -9,29 +9,22 @@ export interface TeamMember {
     email: string;
   };
   profileImage: string;
-  assignedProject: string[]; // ✅ frontend expects an array
+  assignedProject: string[]; 
   joinedDate: Date;
   isActive: boolean;
 }
-
-// ✅ Set auth headers once
 const token = localStorage.getItem('token');
 const headers = {
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
 };
-
-// ✅ API base URLs
 const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/team';
 const API_BASE_URL_USER = 'https://general-constructor-web-2.onrender.com/user';
-
-// ✅ GET: Fetch all team members (and fix assignedProject type)
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
   const response = await axios.get(API_BASE_URL, { headers });
 
   const formatted = response.data.map((member: any) => ({
     ...member,
-    // 👇 Ensure assignedProject is always an array
     assignedProject: Array.isArray(member.assignedProject)
       ? member.assignedProject
       : [member.assignedProject],
