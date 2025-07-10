@@ -31,7 +31,7 @@ export default function SiteAccountPage() {
   const [showModal, setShowModal] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<AccountEntry>>({});
   const token = localStorage.getItem('token');
-  const ${API_BASE_URL} = 'https://general-constructor-web-2.onrender.com/account';
+  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/account';
   if (!token) {
     alert('Please sign in to access this page.');
     console.log('No token found, redirecting to sign in');
