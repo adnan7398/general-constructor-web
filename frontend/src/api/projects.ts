@@ -45,7 +45,8 @@ export const completeProject = async (id: string): Promise<void> => {
       },
     }
   );
-};const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
+};
+export const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
   const response = await axios.post(`${API_BASE_URL}/add`, project,{
     headers: {
       Authorization: `Bearer ${token}`,
