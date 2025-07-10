@@ -7,6 +7,7 @@ const SignIn: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +18,7 @@ const SignIn: React.FC = () => {
     }
   
     try {
-      const response = await fetch('http://localhost:3000/admin/signin', {
+      const response = await fetch(`${API_BASE_URL}/admin/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
