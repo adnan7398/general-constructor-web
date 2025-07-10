@@ -41,7 +41,7 @@ export default function SiteAccountPage() {
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const res = await fetch('${API_BASE_URL}/sites',{
+        const res = await fetch(`${API_BASE_URL}/sites`,{
           headers: {  'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -98,7 +98,7 @@ export default function SiteAccountPage() {
   const addSite = async () => {
     if (!newSite.trim()) return;
     try {
-      await fetch('${API_BASE_URL}/newsite', {
+      await fetch(`${API_BASE_URL}/newsite`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
