@@ -17,7 +17,7 @@ export interface Project {
   createdAt?: string;
 }
 const token = localStorage.getItem('token');
-const API_BASE_URL = 'http://localhost:3000/project';
+const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/project';
 export const getPendingProjects = async (): Promise<Project[]> => {
   const response = await axios.get(`${API_BASE_URL}/pending`,{
     headers: {
