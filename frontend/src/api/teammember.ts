@@ -27,8 +27,8 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
   return response.data;
 };
 
-export const addTeamMember = async (): Promise<TeamMember> => {
-  const response = await axios.post(API_BASE_URL,{
+export const addTeamMember = async (member: Omit<TeamMember, '_id'>): Promise<TeamMember> => {
+  const response = await axios.post(API_BASE_URL, member,{
     headers: headers
   });
   return response.data;

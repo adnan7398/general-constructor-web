@@ -10,7 +10,7 @@ interface TeamMember {
     email: string;
   };
   profileImage: string;
-  assignedProject: string; // ObjectId as string
+  assignedProject: string[]; // ObjectId as string
   joinedDate: Date;
   isActive: boolean;
 }
@@ -26,7 +26,7 @@ const TeamMembers: React.FC = () => {
       email: ''
     },
     profileImage: '',
-    assignedProject: '', // Should be ObjectId string
+    assignedProject: [], 
     joinedDate: new Date(),
     isActive: true
   });
@@ -42,7 +42,14 @@ const TeamMembers: React.FC = () => {
   };
 
   const handleAdd = async () => {
-    await addTeamMember(form);
+    const preparedForm = {
+      ...form,
+      assignedProject: [form.assignedProject] // ✅ Convert string to array
+    };
+  
+    await addTeamMember(preparedForm); // ✅ Send the fixed form
+  
+    // Reset form after adding
     setForm({
       name: '',
       role: 'Engineer',
@@ -51,14 +58,15 @@ const TeamMembers: React.FC = () => {
         email: ''
       },
       profileImage: '',
-      assignedProject: '', // Should be ObjectId string
+      assignedProject: '',
       joinedDate: new Date(),
       isActive: true
     });
+  
     setIsOpen(false);
     fetchMembers();
   };
-
+  
   const handleDelete = async (id: string) => {
     await deleteTeamMember(id);
     fetchMembers();
