@@ -19,11 +19,11 @@ const teamMemberSchema = new mongoose.Schema({
     type: String,
     default: 'https://www.gravatar.com/avatar/default'
   },
-  assignedProject: [{
-    type: mongoose.Schema.Types.ObjectId,
+  assignedProject: {
+    type: [mongoose.Schema.Types.ObjectId],
     ref: 'Project',
-    required: true
-  }],
+    default: [],
+  },
   joinedDate: {
     type: Date,
     default: Date.now
