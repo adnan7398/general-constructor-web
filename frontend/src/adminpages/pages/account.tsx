@@ -153,7 +153,8 @@ export default function SiteAccountPage() {
     try {
       await fetch('http://localhost:3000/account/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Authorization': `Bearer ${token}`,
+         'Content-Type': 'application/json' },
         body: JSON.stringify({ siteName, entries: [newEntry] })
       });
       setEntries(prev => [...prev, newEntry as AccountEntry]);

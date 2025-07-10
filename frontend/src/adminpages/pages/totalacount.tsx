@@ -20,6 +20,11 @@ const Account: React.FC = () => {
   const [filterType, setFilterType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const token = localStorage.getItem('token');
+  const header = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,7 +32,9 @@ const Account: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch('http://localhost:3000/account/site');
+        const res = await fetch('http://localhost:3000/account/site',{
+          headers: header,
+        });
         if (!res.ok) throw new Error('Failed to fetch data');
 
         const data = await res.json();
