@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getTeamMembers, addTeamMember, deleteTeamMember } from '../../api/teammember';
 import { Plus, Trash2 } from 'lucide-react';
+
 interface TeamMember {
   _id: string;
   name: string;
@@ -10,7 +11,7 @@ interface TeamMember {
     email: string;
   };
   profileImage: string;
-  assignedProject: string[]; // ObjectId as string
+  assignedProject: string[];
   joinedDate: Date;
   isActive: boolean;
 }
@@ -18,19 +19,19 @@ interface TeamMember {
 const TeamMembers: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+
   const [form, setForm] = useState<Omit<TeamMember, '_id'>>({
     name: '',
     role: 'Engineer',
     contact: {
       phone: '',
-      email: ''
+      email: '',
     },
     profileImage: '',
-    assignedProject: [], 
+    assignedProject: [],
     joinedDate: new Date(),
-    isActive: true
+    isActive: true,
   });
-  
 
   useEffect(() => {
     fetchMembers();
@@ -42,31 +43,35 @@ const TeamMembers: React.FC = () => {
   };
 
   const handleAdd = async () => {
-    const preparedForm = {
-      ...form,
-      assignedProject: [form.assignedProject] // ✅ Convert string to array
-    };
+    try {
+      // ensure value is array
+      const preparedForm = {
+        ...form,
+        assignedProject: Array.isArray(form.assignedProject)
+          ? form.assignedProject
+          : [form.assignedProject]
+      };
   
-    await addTeamMember(preparedForm); // ✅ Send the fixed form
+      await addTeamMember(preparedForm);
   
-    // Reset form after adding
-    setForm({
-      name: '',
-      role: 'Engineer',
-      contact: {
-        phone: '',
-        email: ''
-      },
-      profileImage: '',
-      assignedProject: '',
-      joinedDate: new Date(),
-      isActive: true
-    });
+      setForm({
+        name: '',
+        role: 'Engineer',
+        contact: { phone: '', email: '' },
+        profileImage: '',
+        assignedProject: [],
+        joinedDate: new Date(),
+        isActive: true
+      });
   
-    setIsOpen(false);
-    fetchMembers();
+      setIsOpen(false);
+      fetchMembers();
+    } catch (error) {
+      console.error('Failed to add member:', error);
+    }
   };
   
+
   const handleDelete = async (id: string) => {
     await deleteTeamMember(id);
     fetchMembers();
@@ -91,7 +96,7 @@ const TeamMembers: React.FC = () => {
               <h2 className="font-medium">{member.name}</h2>
               <p className="text-sm text-gray-600">{member.role} | {member.contact.email}</p>
             </div>
-            <button onClick={() => handleDelete(member._id!)} className="text-red-500 hover:text-red-700">
+            <button onClick={() => handleDelete(member._id)} className="text-red-500 hover:text-red-700">
               <Trash2 />
             </button>
           </div>
@@ -111,13 +116,18 @@ const TeamMembers: React.FC = () => {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="w-full border p-2 rounded"
               />
-              <input
-                type="text"
-                placeholder="Role"
+              <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value as TeamMember['role'] })}
                 className="w-full border p-2 rounded"
-              />
+              >
+                <option value="Engineer">Engineer</option>
+                <option value="Architect">Architect</option>
+                <option value="Contractor">Contractor</option>
+                <option value="Manager">Manager</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Worker">Worker</option>
+              </select>
               <input
                 type="email"
                 placeholder="Email"
@@ -125,42 +135,43 @@ const TeamMembers: React.FC = () => {
                 onChange={(e) => setForm({ ...form, contact: { ...form.contact, email: e.target.value } })}
                 className="w-full border p-2 rounded"
               />
-               <input
+              <input
                 type="tel"
-                pattern="[0-9]{10}"
-                placeholder="10-digit number"
+                placeholder="Phone"
                 value={form.contact.phone}
                 onChange={(e) => setForm({ ...form, contact: { ...form.contact, phone: e.target.value } })}
                 className="w-full border p-2 rounded"
               />
               <input
                 type="text"
-                placeholder="Role"
+                placeholder="Profile Image URL"
                 value={form.profileImage}
                 onChange={(e) => setForm({ ...form, profileImage: e.target.value })}
                 className="w-full border p-2 rounded"
               />
               <input
-                type="email"
-                placeholder="Email"
-                value={form.assignedProject}
-                onChange={(e) => setForm({ ...form, assignedProject: e.target.value })}
+                type="text"
+                placeholder="Assigned Project ID (comma separated)"
+                value={form.assignedProject.join(',')}
+                onChange={(e) =>
+                  setForm({ ...form, assignedProject: e.target.value.split(',').map((id) => id.trim()) })
+                }
                 className="w-full border p-2 rounded"
               />
               <input
-                type="text"
-                placeholder="Name"
+                type="date"
                 value={form.joinedDate.toISOString().split('T')[0]}
                 onChange={(e) => setForm({ ...form, joinedDate: new Date(e.target.value) })}
                 className="w-full border p-2 rounded"
               />
-              <input
-                type="text"
-                placeholder="Role"
-                value={form.isActive ? 'Active' : 'Inactive'}
-                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                className="w-full border p-2 rounded"
-              />
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                />
+                <label className="text-sm">Is Active</label>
+              </div>
             </div>
             <div className="flex justify-end mt-4 space-x-2">
               <button onClick={() => setIsOpen(false)} className="text-gray-700">Cancel</button>
