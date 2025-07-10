@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckSquare, Clock, ListTodo } from 'lucide-react';
 
 type TaskStatus = 'pending' | 'in-progress' | 'completed';
 
 interface Task {
-  id: number;
+  id: string;
   title: string;
   project: string;
   assignee: string;
@@ -14,38 +14,59 @@ interface Task {
 
 const TaskOverview: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | 'all'>('all');
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  const tasks: Task[] = [
-    { id: 1, title: 'Finalize foundation blueprints', project: 'Office Tower', assignee: 'John D.', status: 'completed', dueDate: '2025-03-15' },
-    { id: 2, title: 'Order steel beams', project: 'Shopping Mall', assignee: 'Sarah M.', status: 'pending', dueDate: '2025-03-22' },
-    { id: 3, title: 'Electrical wiring inspection', project: 'Residential Complex', assignee: 'Robert J.', status: 'in-progress', dueDate: '2025-03-18' },
-    { id: 4, title: 'Plumbing installation', project: 'Office Tower', assignee: 'Emily K.', status: 'in-progress', dueDate: '2025-03-20' },
-    { id: 5, title: 'Roofing completion', project: 'Shopping Mall', assignee: 'David L.', status: 'pending', dueDate: '2025-03-25' },
-  ];
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/project/all', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
 
-  const filteredTasks = selectedStatus === 'all' 
-    ? tasks 
+        const projects = await res.json();
+
+        const transformed: Task[] = projects.map((proj: any) => ({
+          id: proj._id,
+          title: proj.description || proj.name,
+          project: proj.name,
+          assignee: proj.clientName || 'Unassigned',
+          status:
+            proj.status === 'completed'
+              ? 'completed'
+              : proj.status === 'ongoing'
+              ? 'in-progress'
+              : 'pending',
+          dueDate: proj.endDate || '2025-12-31', // fallback for null
+        }));
+
+        setTasks(transformed);
+      } catch (err) {
+        console.error('Error fetching project data:', err);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  const filteredTasks = selectedStatus === 'all'
+    ? tasks
     : tasks.filter(task => task.status === selectedStatus);
 
   const getStatusIcon = (status: TaskStatus) => {
     switch (status) {
-      case 'completed':
-        return <CheckSquare className="h-4 w-4 text-green-500" />;
-      case 'in-progress':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'pending':
-        return <ListTodo className="h-4 w-4 text-blue-500" />;
+      case 'completed': return <CheckSquare className="h-4 w-4 text-green-500" />;
+      case 'in-progress': return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'pending': return <ListTodo className="h-4 w-4 text-blue-500" />;
     }
   };
 
   const getStatusClass = (status: TaskStatus) => {
     switch (status) {
-      case 'completed':
-        return 'text-green-600 bg-green-50';
-      case 'in-progress':
-        return 'text-amber-600 bg-amber-50';
-      case 'pending':
-        return 'text-blue-600 bg-blue-50';
+      case 'completed': return 'text-green-600 bg-green-50';
+      case 'in-progress': return 'text-amber-600 bg-amber-50';
+      case 'pending': return 'text-blue-600 bg-blue-50';
     }
   };
 
@@ -73,9 +94,10 @@ const TaskOverview: React.FC = () => {
       <div className="px-4 py-5 sm:px-6 border-b border-gray-100">
         <div className="flex items-center">
           <CheckSquare className="h-5 w-5 text-blue-600 mr-2" />
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Task Overview</h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">Project Status Overview</h3>
         </div>
       </div>
+
       <div className="px-4 py-5 sm:p-6">
         <div className="flex flex-wrap items-center space-x-2 mb-4">
           {statusFilters.map((filter) => (
