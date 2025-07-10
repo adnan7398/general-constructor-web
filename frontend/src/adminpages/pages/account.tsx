@@ -31,6 +31,7 @@ export default function SiteAccountPage() {
   const [showModal, setShowModal] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<AccountEntry>>({});
   const token = localStorage.getItem('token');
+  const ${API_BASE_URL} = 'https://general-constructor-web-2.onrender.com/account';
   if (!token) {
     alert('Please sign in to access this page.');
     console.log('No token found, redirecting to sign in');
@@ -40,7 +41,7 @@ export default function SiteAccountPage() {
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const res = await fetch('http://localhost:3000/account/sites',{
+        const res = await fetch('${API_BASE_URL}/sites',{
           headers: {  'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -57,7 +58,7 @@ export default function SiteAccountPage() {
     if (!siteName) return;
     const fetchEntries = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/account/${siteName}`,{
+        const res = await fetch(`${API_BASE_URL}/${siteName}`,{
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -97,7 +98,7 @@ export default function SiteAccountPage() {
   const addSite = async () => {
     if (!newSite.trim()) return;
     try {
-      await fetch('http://localhost:3000/account/newsite', {
+      await fetch('${API_BASE_URL}/newsite', {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -128,7 +129,7 @@ export default function SiteAccountPage() {
 
   const deleteEntry = async (entryId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/account/${siteName}/${entryId}`, {
+      const response = await fetch(`${API_BASE_URL}/${siteName}/${entryId}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json' 
@@ -151,7 +152,7 @@ export default function SiteAccountPage() {
   }
   const handleAddEntry = async () => {
     try {
-      await fetch('http://localhost:3000/account/', {
+      await fetch('${API_BASE_URL}/', {
         method: 'POST',
         headers: {'Authorization': `Bearer ${token}`,
          'Content-Type': 'application/json' },
