@@ -26,7 +26,13 @@ const SignIn: React.FC = () => {
         body: JSON.stringify({ email, password })
       });
   
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Invalid JSON received", jsonError);
+        throw new Error("Server Error: Invalid response format.");
+      }
   
       if (!response.ok) {
         throw new Error(data.message || 'Authentication failed');
