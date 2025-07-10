@@ -21,6 +21,7 @@ const Account: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = localStorage.getItem('token');
+  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/account';
   const header = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`
@@ -32,7 +33,7 @@ const Account: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch('http://localhost:3000/account/site',{
+        const res = await fetch(`${API_BASE_URL}/site`,{
           headers: header,
         });
         if (!res.ok) throw new Error('Failed to fetch data');
