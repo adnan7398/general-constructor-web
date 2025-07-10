@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 function AdminMiddleware(req,res,next){
-    const authHeader = req.headers['authorization'];
-    if(!authHeadr || !authHeader.startsWith('Bearer ')){
+    const authHeader = req.header("Authorization");
+    if(!authHeader || !authHeader.startsWith('Bearer ')){
         return res.status(401).json({message: 'Unauthorized'});
     }
     const token = authHeader.split(' ')[1];
@@ -19,3 +19,4 @@ function AdminMiddleware(req,res,next){
         return res.status(401).json({message: 'Unauthorized'});
     }
 }
+export default AdminMiddleware;

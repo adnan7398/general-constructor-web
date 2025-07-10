@@ -8,17 +8,39 @@ const SignIn: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // TODO: Replace with real authentication
-    console.log('Email:', email);
-    console.log('Password:', password);
-
-    // Simulate navigation
-    navigate('/dashboard');
+  
+    if (!email || !password) {
+      alert('Please enter both email and password.');
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:3000/admin/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+  
+      // Save token to localStorage or sessionStorage
+      localStorage.setItem('token', data.token); // 👈 Store JWT
+      console.log('Logged in successfully');
+      
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed. Please check your credentials.');
+    }
   };
-
   return (
     <div className="signin-page">
       <h1>Sign In</h1>

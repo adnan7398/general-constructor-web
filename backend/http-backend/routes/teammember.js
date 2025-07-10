@@ -1,8 +1,9 @@
 import express from 'express';
 import TeamMember from '../models/teammember.js';
-
+import adminMiddleware from '../middleware/adminmiddleware.js';
 const TeamRouter = express.Router();
-
+TeanmRouter.use(express.json());
+TeamRouter.use(adminMiddleware);
 // Create new Team Member
 TeamRouter.post('/', async (req, res) => {
   try {

@@ -1,6 +1,8 @@
 import express from 'express';
 import Project from '../models/project.js';
+import AdminMiddleware from '../middleware/adminmiddleware.js';
 const projectRoutes = express.Router();
+projectRoutes.use(AdminMiddleware);
 projectRoutes.post('/add', async (req, res) => {
     try {
       const newProject = new Project(req.body);

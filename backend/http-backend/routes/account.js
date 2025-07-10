@@ -1,7 +1,9 @@
 import express from 'express';
 const accountRoutes = express.Router();
 import SiteAccount from '../models/siteaccounthistory.js';
-
+import AdminMiddleware from '../middleware/adminmiddleware.js';
+accountRoutes.use(express.json());
+accountRoutes.use(AdminMiddleware);
 accountRoutes.post('/newsite', async (req, res) => {
   try {
     const { siteName } = req.body;
