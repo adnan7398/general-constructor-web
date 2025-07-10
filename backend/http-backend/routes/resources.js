@@ -1,10 +1,10 @@
 // routes/resources.js
 import express from 'express';
 import Resource from '../models/resources.js'; // Adjust the path as necessary
-
+import Adminmiddleware from  '../middleware/adminmiddleware.js'; // Adjust the path as necessary
 const resourcesrouter= express.Router();
 // routes/resources.js
-resourcesrouter.post('/', async (req, res) => {
+resourcesrouter.post('/',Adminmiddleware(), async (req, res) => {
     try {
       const {
         name,
