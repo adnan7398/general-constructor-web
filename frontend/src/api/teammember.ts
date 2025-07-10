@@ -18,7 +18,7 @@ const headers = {
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
 }
-const API_BASE_URL = 'https://general-constructor-web-2.onrender.com';
+const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/team';
 const API_BASE_URL_USER = 'https://general-constructor-web-2.onrender.com/user';
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
   const response = await axios.get(API_BASE_URL,{
