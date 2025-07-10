@@ -36,13 +36,16 @@ export const getCompletedProjects = async (): Promise<Project[]> => {
   return response.data;
 };
 export const completeProject = async (id: string): Promise<void> => {
-  await axios.put(`${API_BASE_URL}/complete/${id}`,{
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-export const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
+  await axios.put(
+    `${API_BASE_URL}/complete/${id}`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
   const response = await axios.post(`${API_BASE_URL}/add`, project,{
     headers: {
       Authorization: `Bearer ${token}`,
