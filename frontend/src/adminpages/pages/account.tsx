@@ -30,11 +30,19 @@ export default function SiteAccountPage() {
   const [newSite, setNewSite] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<AccountEntry>>({});
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Please sign in to access this page.');
+    console.log('No token found, redirecting to sign in');
+    window.location.href = '/signin';
+  }
 
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const res = await fetch('http://localhost:3000/account/sites');
+        const res = await fetch('http://localhost:3000/account/sites',{
+          headers: {  'Authorization': `Bearer ${token}` }
+        });
         const data = await res.json();
         setAvailableSites(data);
         if (!siteName && data.length > 0) setSiteName(data[0]);
@@ -49,7 +57,9 @@ export default function SiteAccountPage() {
     if (!siteName) return;
     const fetchEntries = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/account/${siteName}`);
+        const res = await fetch(`http://localhost:3000/account/${siteName}`,{
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await res.json();
         setEntries(data);
       } catch (err) {
@@ -89,7 +99,10 @@ export default function SiteAccountPage() {
     try {
       await fetch('http://localhost:3000/account/newsite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ siteName: newSite, entries: [] })
       });
       setAvailableSites(prev => [...prev, newSite]);
@@ -116,6 +129,10 @@ export default function SiteAccountPage() {
   const deleteEntry = async (entryId: string) => {
     try {
       const response = await fetch(`http://localhost:3000/account/${siteName}/${entryId}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         method: 'DELETE',
       });
       if (response.ok) {
