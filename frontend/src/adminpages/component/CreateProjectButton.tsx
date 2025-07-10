@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { addProject } from '../../api/projects'; 
-import { Project } from '../../api/projects';
+import { addProject } from '../../api/projectsapi'; 
+import { Project } from '../../api/projectsapi';
 
 const CreateProjectButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
