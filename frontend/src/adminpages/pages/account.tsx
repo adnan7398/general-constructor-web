@@ -152,7 +152,7 @@ export default function SiteAccountPage() {
   }
   const handleAddEntry = async () => {
     try {
-      await fetch('${API_BASE_URL}/', {
+      await fetch(`${API_BASE_URL}/`, {
         method: 'POST',
         headers: {'Authorization': `Bearer ${token}`,
          'Content-Type': 'application/json' },
