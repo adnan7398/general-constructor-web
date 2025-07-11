@@ -57,7 +57,10 @@ const Account: React.FC = () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/site`,{
-        headers: header,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
       });
       if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
