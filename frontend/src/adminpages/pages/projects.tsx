@@ -6,7 +6,7 @@ import {
   getPendingProjects,
   getCompletedProjects,
   completeProject,
-} from '../../api/projectsapi';
+} from '../../api/projects';
 import CreateProjectButton from '../component/CreateProjectButton';
 
 const Projects: React.FC = () => {
