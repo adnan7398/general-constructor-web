@@ -11,7 +11,6 @@ interface Task {
   status: TaskStatus;
   dueDate: string;
 }
-
 const TaskOverview: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | 'all'>('all');
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,7 +18,7 @@ const TaskOverview: React.FC = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await fetch('http://localhost:3000/project/all', {
+        const res = await fetch('https://general-constructor-web-2.onrender.com/project/all', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
