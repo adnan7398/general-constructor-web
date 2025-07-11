@@ -46,8 +46,6 @@ accountRoutes.post('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// GET: List all unique site names
 accountRoutes.get('/sites', async (req, res) => {
   try {
     const siteNames = await SiteAccount.distinct('siteName');
@@ -116,17 +114,12 @@ accountRoutes.delete('/:siteName/:entryId', async (req, res) => {
 
     site.entries.splice(entryIndex, 1);
     await site.save({validateBeforeSave: false});
-    // Alternatively, i can use:  
-    // await SiteAccount.updateOne({ siteName }, { $pull: { entries: { id: entryId } } });
-
     res.status(200).json({ message: 'Entry deleted successfully', site });
   } catch (err) {
     console.error('Error deleting entry:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
-//  Fetch all entries for a specific site
 accountRoutes.get('/:siteName', async (req, res) => {
   try {
     const { siteName } = req.params;
