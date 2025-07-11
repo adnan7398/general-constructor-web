@@ -47,6 +47,7 @@ accountRoutes.post('/', async (req, res) => {
   }
 });
 
+// GET: List all unique site names
 accountRoutes.get('/sites', async (req, res) => {
   try {
     const siteNames = await SiteAccount.distinct('siteName');
@@ -58,15 +59,14 @@ accountRoutes.get('/sites', async (req, res) => {
 });
 accountRoutes.get('/site', async (req, res) => {
   try {
-    const allSites = await SiteAccount.find(); 
-    res.json(allSites);
-  } catch (error) {
-    console.error('Error fetching sites:', error);
-    res.status(500).json({ message: 'Server Error' });
+    const sites = await SiteAccount.find().populate('entries');
+    res.json(sites);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch sites' });
   }
 });
 
-
+//  Update an entry by entryId OR add if not present
 accountRoutes.put('/:siteName', async (req, res) => {
   try {
     const { siteName } = req.params;
