@@ -13,7 +13,7 @@ const BudgetUtilization: React.FC = () => {
 
   const fetchBudgetData = async () => {
     try {
-      const res = await fetch('http://localhost:3000/account/site', {
+      const res = await fetch('https://general-constructor-web-2.onrender.com/account/site', {
         headers: {
           authorization: `Bearer ${localStorage.getItem('token')}`,
         },
