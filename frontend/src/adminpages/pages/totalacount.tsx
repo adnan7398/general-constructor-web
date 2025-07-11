@@ -33,7 +33,7 @@ const Account: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API_BASE_URL}/sites`,{
+        const res = await fetch(`${API_BASE_URL}/site`,{
           headers: header,
         });
         if (!res.ok) throw new Error('Failed to fetch data');
@@ -56,13 +56,10 @@ const Account: React.FC = () => {
   const refreshData = async () => {
     setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch(`${API_BASE_URL}/sites`,{
+      const res = await fetch(`${API_BASE_URL}/site`,{
         headers: header,
       });
       if (!res.ok) throw new Error('Failed to fetch data');
-
       const data = await res.json();
       setSiteAccounts(data);
     } catch (err: any) {
