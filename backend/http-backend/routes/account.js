@@ -57,11 +57,15 @@ accountRoutes.get('/sites', async (req, res) => {
   }
 });
 accountRoutes.get('/site', async (req, res) => {
-  const siteName = decodeURIComponent(req.params.siteName); 
-  const site = await SiteAccount.findOne({ siteName });
-  if (!site) return res.status(404).json({ error: 'Site not found' });
-  res.json(site.entries);
+  try {
+    const allSites = await SiteAccount.find(); 
+    res.json(allSites);
+  } catch (error) {
+    console.error('Error fetching sites:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
 });
+
 
 accountRoutes.put('/:siteName', async (req, res) => {
   try {
