@@ -58,12 +58,10 @@ accountRoutes.get('/sites', async (req, res) => {
   }
 });
 accountRoutes.get('/site', async (req, res) => {
-  try {
-    const sites = await SiteAccount.find().populate('entries');
-    res.json(sites);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch sites' });
-  }
+  const siteName = decodeURIComponent(req.params.siteName); // optional but safe
+  const site = await Site.findOne({ siteName });
+  if (!site) return res.status(404).json({ error: 'Site not found' });
+  res.json(site.entries); // or whatever structure you have
 });
 
 //  Update an entry by entryId OR add if not present
