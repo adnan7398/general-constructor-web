@@ -56,7 +56,9 @@ const Account: React.FC = () => {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/site`);
+      const res = await fetch(`${API_BASE_URL}/site`,{
+        headers: header,
+      });
       if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
       setSiteAccounts(data);

@@ -47,7 +47,6 @@ accountRoutes.post('/', async (req, res) => {
   }
 });
 
-// GET: List all unique site names
 accountRoutes.get('/sites', async (req, res) => {
   try {
     const siteNames = await SiteAccount.distinct('siteName');
@@ -58,13 +57,12 @@ accountRoutes.get('/sites', async (req, res) => {
   }
 });
 accountRoutes.get('/site', async (req, res) => {
-  const siteName = decodeURIComponent(req.params.siteName); // optional but safe
+  const siteName = decodeURIComponent(req.params.siteName); 
   const site = await Site.findOne({ siteName });
   if (!site) return res.status(404).json({ error: 'Site not found' });
-  res.json(site.entries); // or whatever structure you have
+  res.json(site.entries);
 });
 
-//  Update an entry by entryId OR add if not present
 accountRoutes.put('/:siteName', async (req, res) => {
   try {
     const { siteName } = req.params;
