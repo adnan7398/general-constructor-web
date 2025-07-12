@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { SiteAccount, Entry, SiteSummary } from '../../api/account';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../layout/Sidebar';
 
 const Account: React.FC = () => {
     const navigate = useNavigate();
