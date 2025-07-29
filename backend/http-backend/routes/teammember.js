@@ -4,7 +4,6 @@ import adminMiddleware from '../middleware/adminmiddleware.js';
 const TeamRouter = express.Router();
 TeamRouter.use(express.json());
 TeamRouter.use(adminMiddleware);
-// Create new Team Member
 TeamRouter.post('/', async (req, res) => {
   try {
     const teamMember = new TeamMember(req.body);
@@ -15,7 +14,6 @@ TeamRouter.post('/', async (req, res) => {
   }
 });
 
-// Get all Team Members (optionally filter by assignedProject)
 TeamRouter.get('/', async (req, res) => {
   try {
     const filter = {};
@@ -29,7 +27,6 @@ TeamRouter.get('/', async (req, res) => {
   }
 });
 
-// Get a Team Member by ID
 TeamRouter.get('/:id', async (req, res) => {
   try {
     const teamMember = await TeamMember.findById(req.params.id);
