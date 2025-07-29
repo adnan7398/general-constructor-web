@@ -16,7 +16,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
  'https://general-constructor-web-hu2p.vercel.app',
- 'https://general-constructor-web.vercel.app/,'
+ 'https://general-constructor-web.vercel.app/',
 ];
 
 app.use(
