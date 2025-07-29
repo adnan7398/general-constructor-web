@@ -35,7 +35,7 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
 };
 
 export const getAllProjects = async () => {
-  const res = await axios.get('https://general-constructor-web-2.onrender.com/project/all');
+  const res = await axios.get('https://general-constructor-web-2.onrender.com/project/all',{headers});
   return res.data;
 };
 

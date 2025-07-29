@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 const teamMemberSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   role: {
@@ -14,3 +16,5 @@ const teamMemberSchema = new mongoose.Schema({
   joinedDate: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: true }
 });
+
+export default mongoose.model('TeamMember', teamMemberSchema);
