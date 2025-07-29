@@ -11,17 +11,28 @@ import accountRoutes from "./routes/account.js"; // Assuming you have a route fo
 import resourcesrouter from './routes/resources.js';
 
 const app = express();
-
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
- 'https://general-constructor-web-hu2p.vercel.app',
- 'https://general-constructor-web.vercel.app/',
+  "https://general-constructor-web-hu2p.vercel.app",
+  "https://general-constructor-web.vercel.app"
 ];
+app.use((req, res, next) => {
+  console.log("Incoming Origin:", req.headers.origin);
+  next();
+});
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow curl, Postman
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.error("Blocked by CORS:", origin);
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
