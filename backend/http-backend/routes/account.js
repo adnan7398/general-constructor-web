@@ -34,6 +34,15 @@ accountRoutes.post('/', async (req, res) => {
       return res.status(400).json({ error: 'siteName and entries[] are required' });
     }
 
+    // Validate each entry has required fields
+    for (const entry of entries) {
+      if (!entry.date || !entry.type || !entry.typeofExpense || !entry.category || !entry.amount || entry.Quantity === undefined) {
+        return res.status(400).json({ 
+          error: 'Each entry must have: date, type, typeofExpense, category, amount, and Quantity' 
+        });
+      }
+    }
+
     const updatedSite = await SiteAccount.findOneAndUpdate(
       { siteName },
       { $push: { entries: { $each: entries } } },
@@ -70,20 +79,60 @@ accountRoutes.put('/:siteName', async (req, res) => {
     const { siteName } = req.params;
     const { entryId, newEntry } = req.body;
 
+    console.log('PUT request received:', { siteName, entryId, newEntry });
+    console.log('newEntry.typeofExpense:', newEntry.typeofExpense);
+    console.log('Valid enum values:', ['LABOUR', 'MAINTENANCE']);
+
     if (!entryId || !newEntry) {
       return res.status(400).json({ error: 'entryId and newEntry are required' });
+    }
+
+    // Validate required fields for newEntry
+    console.log('Validating newEntry fields:', {
+      date: newEntry.date,
+      type: newEntry.type,
+      typeofExpense: newEntry.typeofExpense,
+      category: newEntry.category,
+      amount: newEntry.amount,
+      Quantity: newEntry.Quantity
+    });
+    
+    console.log('typeofExpense value:', newEntry.typeofExpense, 'Type:', typeof newEntry.typeofExpense);
+    
+    if (!newEntry.date || !newEntry.type || !newEntry.typeofExpense || !newEntry.category || !newEntry.amount || newEntry.Quantity === undefined || newEntry.Quantity === null) {
+      return res.status(400).json({ 
+        error: 'newEntry must have: date, type, typeofExpense, category, amount, and Quantity' 
+      });
+    }
+    
+    // Validate enum values
+    const validTypes = ['INCOME', 'EXPENSE'];
+    const validTypeofExpense = ['LABOUR', 'MAINTENANCE'];
+    
+    if (!validTypes.includes(newEntry.type)) {
+      return res.status(400).json({ 
+        error: `Invalid type. Must be one of: ${validTypes.join(', ')}` 
+      });
+    }
+    
+    if (!validTypeofExpense.includes(newEntry.typeofExpense)) {
+      return res.status(400).json({ 
+        error: `Invalid typeofExpense. Must be one of: ${validTypeofExpense.join(', ')}` 
+      });
     }
 
     const site = await SiteAccount.findOne({ siteName });
 
     if (!site) return res.status(404).json({ error: 'Site not found' });
 
-    const index = site.entries.findIndex(entry => entry.id === entryId);
+    const index = site.entries.findIndex(entry => entry._id.toString() === entryId);
 
     if (index === -1) {
       site.entries.push(newEntry);
     } else {
-      site.entries[index] = newEntry;
+      // Preserve the _id when updating
+      const existingEntry = site.entries[index];
+      site.entries[index] = { ...newEntry, _id: existingEntry._id };
     }
 
     await site.save();
@@ -106,7 +155,7 @@ accountRoutes.delete('/:siteName/:entryId', async (req, res) => {
 
     if (!site) return res.status(404).json({ error: 'Site not found' });
 
-    const entryIndex = site.entries.findIndex(entry => entry.id === entryId);
+    const entryIndex = site.entries.findIndex(entry => entry._id.toString() === entryId);
 
     if (entryIndex === -1) {
       return res.status(404).json({ error: 'Entry not found' });

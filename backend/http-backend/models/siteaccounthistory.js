@@ -4,11 +4,11 @@ import { type } from 'os';
 const entrySchema = new mongoose.Schema({
   date: { type: Date, required: true },
   type: { type: String, enum: ['INCOME', 'EXPENSE'], required: true },
-  typeofExpense: { type: String,enum :['LABOUR','MAINTENAINCE'], required: true },
+  typeofExpense: { type: String, enum: ['LABOUR', 'MAINTENANCE'], required: true },
   category: { type: String, required: true },
   particular: { type: String },
   amount: { type: Number, required: true },
-  Quantity: { type: String, required: true },
+  Quantity: { type: Number, required: true },
   paymentMode: { type: String },
 }, { _id: true });
 

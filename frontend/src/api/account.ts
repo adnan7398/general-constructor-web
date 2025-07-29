@@ -2,11 +2,11 @@ export interface Entry {
     _id: string;
     date: Date;
     type: 'INCOME' | 'EXPENSE';
-    typeofExpense: 'LABOUR' | 'MAINTENAINCE';
+    typeofExpense: 'LABOUR' | 'MAINTENANCE';
     category: string;
     particular?: string;
     amount: number;
-    Quantity: string;
+    Quantity: number;
     paymentMode?: string;
   }
   

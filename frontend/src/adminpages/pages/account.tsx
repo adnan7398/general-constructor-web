@@ -11,12 +11,14 @@ interface AccountEntry {
   paymentMode?: string;
   description?: string;
   type: 'INCOME' | 'EXPENSE';
-  typeofExpense?: 'LABOUR' | 'MATERIAL';
+  typeofExpense?: 'LABOUR' | 'MAINTENANCE';
+  category: string;
 }
 
 export default function SiteAccountPage() {
   const [filters, setFilters] = useState({
     particular: '',
+    category: '',
     minAmount: 0,
     maxAmount: Infinity,
     type: '',
@@ -30,6 +32,8 @@ export default function SiteAccountPage() {
   const [newSite, setNewSite] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<AccountEntry>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string>('');
   const token = localStorage.getItem('token');
   const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/account';
   if (!token) {
@@ -72,6 +76,7 @@ export default function SiteAccountPage() {
   const filteredEntries = entries.filter(entry => {
     return (
       (!filters.particular || entry.particular?.toLowerCase().includes(filters.particular.toLowerCase())) &&
+      (!filters.category || entry.category?.toLowerCase().includes(filters.category.toLowerCase())) &&
       (entry.amount >= filters.minAmount) &&
       (entry.amount <= filters.maxAmount) &&
       (!filters.type || entry.type === filters.type) &&
@@ -88,6 +93,7 @@ export default function SiteAccountPage() {
   const resetFilters = () => {
     setFilters({
       particular: '',
+      category: '',
       minAmount: 0,
       maxAmount: Infinity,
       type: '',
@@ -128,6 +134,15 @@ export default function SiteAccountPage() {
   };
 
   const deleteEntry = async (entryId: string) => {
+    if (!entryId) {
+      alert('Invalid entry ID');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/${siteName}/${entryId}`, {
         headers: { 
@@ -136,14 +151,17 @@ export default function SiteAccountPage() {
         },
         method: 'DELETE',
       });
+      
       if (response.ok) {
         console.log('Entry deleted successfully');
         setEntries(prev => prev.filter(entry => entry._id !== entryId));
       } else {
-        console.error('Failed to delete entry');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete entry');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
+      alert(error.message || 'Failed to delete entry');
     }
   };
   
@@ -152,17 +170,75 @@ export default function SiteAccountPage() {
   }
   const handleAddEntry = async () => {
     try {
-      await fetch(`${API_BASE_URL}/`, {
-        method: 'POST',
-        headers: {'Authorization': `Bearer ${token}`,
-         'Content-Type': 'application/json' },
-        body: JSON.stringify({ siteName, entries: [newEntry] })
-      });
-      setEntries(prev => [...prev, newEntry as AccountEntry]);
+      // Validate required fields
+      if (!newEntry.date || !newEntry.type || !newEntry.typeofExpense || !newEntry.category || !newEntry.amount || newEntry.Quantity === undefined) {
+        alert('Please fill in all required fields: Date, Type, Type of Expense, Category, Amount, and Quantity');
+        return;
+      }
+
+      if (isEditing) {
+        // Update existing entry
+        console.log('Sending edit data:', { entryId: editingEntryId, newEntry });
+        
+        // Ensure all required fields are present
+        const entryToSend = {
+          date: newEntry.date,
+          type: newEntry.type,
+          typeofExpense: newEntry.typeofExpense,
+          category: newEntry.category,
+          particular: newEntry.particular || '',
+          amount: newEntry.amount,
+          Quantity: newEntry.Quantity,
+          paymentMode: newEntry.paymentMode || ''
+        };
+        
+        console.log('Processed entry data:', entryToSend);
+        
+        const response = await fetch(`${API_BASE_URL}/${siteName}`, {
+          method: 'PUT',
+          headers: {'Authorization': `Bearer ${token}`,
+           'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            entryId: editingEntryId, 
+            newEntry: entryToSend 
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update entry');
+        }
+
+        // Update local state
+        setEntries(prev => prev.map(entry => 
+          entry._id === editingEntryId ? { ...entry, ...newEntry } : entry
+        ));
+        
+        setIsEditing(false);
+        setEditingEntryId('');
+      } else {
+        // Add new entry
+        const response = await fetch(`${API_BASE_URL}/`, {
+          method: 'POST',
+          headers: {'Authorization': `Bearer ${token}`,
+           'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteName, entries: [newEntry] })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add entry');
+        }
+
+        const result = await response.json();
+        setEntries(prev => [...prev, newEntry as AccountEntry]);
+      }
+
       setNewEntry({});
       setShowModal(false);
-    } catch (err) {
-      console.error('Failed to add entry:', err);
+    } catch (err: any) {
+      console.error('Failed to add/update entry:', err);
+      alert(err.message || 'Failed to add/update entry');
     }
   };
 
@@ -301,7 +377,12 @@ const expense = filteredEntries
               <p className="text-slate-600 text-sm mt-1">Track all income and expenses</p>
             </div>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setShowModal(true);
+                setIsEditing(false);
+                setEditingEntryId('');
+                setNewEntry({});
+              }}
               className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               <Plus className="w-5 h-5" /> 
@@ -310,12 +391,19 @@ const expense = filteredEntries
           </div>
 
           <div className="overflow-x-auto">
-          <div className="bg-white/90 p-4 rounded-xl mb-6 flex flex-wrap gap-4 items-center">
+                        <div className="bg-white/90 p-4 rounded-xl mb-6 flex flex-wrap gap-4 items-center">
                 <input
                   type="text"
                   placeholder="Filter by particular"
                   value={filters.particular}
                   onChange={e => setFilters({ ...filters, particular: e.target.value })}
+                  className="border px-3 py-2 rounded-lg text-sm w-48"
+                />
+                <input
+                  type="text"
+                  placeholder="Filter by category"
+                  value={filters.category}
+                  onChange={e => setFilters({ ...filters, category: e.target.value })}
                   className="border px-3 py-2 rounded-lg text-sm w-48"
                 />
                 <input
@@ -345,7 +433,7 @@ const expense = filteredEntries
                   <option value="EXPENSE">Expense</option>
                 </select>
                 <button
-                  onClick={() => setFilters({ particular: '', minAmount: 0, maxAmount: Infinity, type: '', minQuantity: 0 })}
+                  onClick={() => setFilters({ particular: '', category: '', minAmount: 0, maxAmount: Infinity, type: '', minQuantity: 0 })}
                   className="text-sm text-blue-600 underline"
                 >
                   Clear Filters
@@ -357,6 +445,7 @@ const expense = filteredEntries
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Date</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Particular</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Category</th>
                   <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Type of Expense</th>
                   <th className="text-right py-4 px-6 font-semibold text-slate-700 text-sm">Amount</th>
                   <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Quantity</th>
@@ -373,6 +462,7 @@ const expense = filteredEntries
                       {entry.date ? new Date(entry.date).toLocaleDateString('en-IN') : '-'}
                     </td>
                     <td className="py-4 px-6 text-slate-700 font-medium">{entry.particular || '-'}</td>
+                    <td className="py-4 px-6 text-slate-700">{entry.category || '-'}</td>
                     <td className="py-4 px-6 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         entry.typeofExpense === 'LABOUR' 
@@ -401,7 +491,20 @@ const expense = filteredEntries
                     <td className="py-4 px-6 text-center">
                       <button
                         onClick={() => {
+                          console.log('Editing entry:', entry);
+                          console.log('Entry fields:', {
+                            date: entry.date,
+                            type: entry.type,
+                            typeofExpense: entry.typeofExpense,
+                            category: entry.category,
+                            amount: entry.amount,
+                            Quantity: entry.Quantity,
+                            particular: entry.particular,
+                            paymentMode: entry.paymentMode
+                          });
                           setNewEntry(entry);
+                          setIsEditing(true);
+                          setEditingEntryId(entry._id || '');
                           setShowModal(true);
                         }}
                         className="text-blue-500 hover:text-blue-700 font-medium text-sm"
@@ -421,7 +524,7 @@ const expense = filteredEntries
                 ))}
                 {entries.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-500">
+                    <td colSpan={9} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center gap-3">
                         <Receipt className="w-12 h-12 text-slate-300" />
                         <p className="text-lg font-medium">No entries available</p>
@@ -442,11 +545,16 @@ const expense = filteredEntries
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-slate-200 flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Add New Entry</h3>
-                <p className="text-slate-600 text-sm mt-1">Enter the transaction details</p>
+                <h3 className="text-xl font-bold text-slate-800">{isEditing ? 'Edit Entry' : 'Add New Entry'}</h3>
+                <p className="text-slate-600 text-sm mt-1">{isEditing ? 'Update the transaction details' : 'Enter the transaction details'}</p>
               </div>
               <button 
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setIsEditing(false);
+                  setEditingEntryId('');
+                  setNewEntry({});
+                }}
                 className="p-2 hover:bg-slate-100 rounded-xl transition-colors duration-200"
               >
                 <X className="w-5 h-5 text-slate-500" />
@@ -496,7 +604,7 @@ const expense = filteredEntries
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  Qauntity
+                  Quantity
                 </label>
                 <input 
                   placeholder="Quantity"
@@ -514,14 +622,27 @@ const expense = filteredEntries
                 </label>
                 <input 
                   placeholder="Cash, UPI, Bank Transfer, etc." 
+                  value={newEntry.paymentMode || ''}
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
                   onChange={(e) => setNewEntry({ ...newEntry, paymentMode: e.target.value })} 
                 />
               </div>
               
               <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+                <input 
+                  placeholder="Enter category" 
+                  type="text"
+                  value={newEntry.category || ''}
+                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
+                  onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })} 
+                />
+              </div>
+              
+              <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Transaction Type</label>
                 <select 
+                  value={newEntry.type || ''}
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
                   onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as 'INCOME' | 'EXPENSE' })}
                 >
@@ -533,19 +654,25 @@ const expense = filteredEntries
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Expenses Type</label>
                 <select 
+                  value={newEntry.typeofExpense || ''}
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MATERIAL' })}
+                  onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MAINTENANCE' })}
                 >
                   <option value="">Select Type</option>
                   <option value="LABOUR"> Labour</option>
-                  <option value="MATERIAL"> MATERIAL</option>
+                  <option value="MAINTENANCE"> Maintenance</option>
                 </select>
               </div>
             </div>
             
             <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
               <button 
-                onClick={() => setShowModal(false)} 
+                onClick={() => {
+                  setShowModal(false);
+                  setIsEditing(false);
+                  setEditingEntryId('');
+                  setNewEntry({});
+                }} 
                 className="px-6 py-3 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all duration-200 font-medium"
               >
                 Cancel
@@ -554,7 +681,7 @@ const expense = filteredEntries
                 onClick={handleAddEntry} 
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                Add Entry
+                {isEditing ? 'Update Entry' : 'Add Entry'}
               </button>
             </div>
           </div>
