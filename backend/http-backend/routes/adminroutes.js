@@ -3,22 +3,15 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/admin.js';
 import AdminMiddleware from '../middleware/adminmiddleware.js';
-
 const adminRoutes = express.Router();
 adminRoutes.use(express.json());
-
-// Register new user
 adminRoutes.post('/register', async (req, res) => {
   try {
     const { name, email, password, role, phone, address } = req.body;
-
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
-
-    // Create new user
     const user = new User({
       name,
       email,
@@ -30,14 +23,11 @@ adminRoutes.post('/register', async (req, res) => {
 
     await user.save();
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
-    // Return user without password
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -52,31 +42,22 @@ adminRoutes.post('/register', async (req, res) => {
   }
 });
 
-// Login user
 adminRoutes.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
-    // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
-    // Generate JWT tokenase
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
-    // Return user without password
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -91,7 +72,6 @@ adminRoutes.post('/login', async (req, res) => {
   }
 });
 
-// Get current user (protected route)
 adminRoutes.get('/me', AdminMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -108,7 +88,6 @@ adminRoutes.get('/me', AdminMiddleware, async (req, res) => {
   }
 });
 
-// Get all users (admin only)
 adminRoutes.get('/users', AdminMiddleware, async (req, res) => {
   try {
     const users = await User.find({}).select('-password');
@@ -119,7 +98,6 @@ adminRoutes.get('/users', AdminMiddleware, async (req, res) => {
   }
 });
 
-// Update user
 adminRoutes.put('/users/:userId', AdminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -129,8 +107,6 @@ adminRoutes.put('/users/:userId', AdminMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    // Update fields
     if (name) user.name = name;
     if (email) user.email = email;
     if (role) user.role = role;
@@ -139,8 +115,6 @@ adminRoutes.put('/users/:userId', AdminMiddleware, async (req, res) => {
     if (notes) user.notes = notes;
 
     await user.save();
-
-    // Return user without password
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -150,8 +124,6 @@ adminRoutes.put('/users/:userId', AdminMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
-
-// Delete user
 adminRoutes.delete('/users/:userId', AdminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
