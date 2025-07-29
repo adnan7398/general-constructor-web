@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import { Building, Users, Clock, CreditCard } from 'lucide-react';
 
 interface StatCardProps {
@@ -12,8 +13,9 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change }) => {
+  const { settings: appearanceSettings } = useAppearance();
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md">
+    <div className="rounded-lg shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md">
       <div className="flex items-center">
         <div className="p-3 rounded-lg bg-blue-50">
           {icon}

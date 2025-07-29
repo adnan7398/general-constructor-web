@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import { 
   User, 
   Camera, 
@@ -30,6 +31,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const { settings: appearanceSettings } = useAppearance();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);

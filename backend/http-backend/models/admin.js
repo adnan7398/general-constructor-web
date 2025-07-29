@@ -39,6 +39,12 @@ const userSchema = new mongoose.Schema({
 
   notes: { type: String },
 
+  // User settings
+  settings: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+
   // Only for worker/client roles (who is the admin who created this account)
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

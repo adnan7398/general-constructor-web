@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import { Building2, TrendingUp, TrendingDown, Plus, X, Calendar, Receipt, User, CreditCard } from 'lucide-react';
 import {useNavigate } from 'react-router-dom';
 interface AccountEntry {
@@ -16,6 +17,7 @@ interface AccountEntry {
 }
 
 export default function SiteAccountPage() {
+  const { settings: appearanceSettings } = useAppearance();
   const [filters, setFilters] = useState({
     particular: '',
     category: '',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import { 
   LayoutDashboard, 
   Building, 
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
+  const { settings: appearanceSettings } = useAppearance();
   
   const navigationItems = [
     { name: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '/dashboard' },
@@ -49,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         ></div>
 
         <div
-          className={`relative flex-1 flex flex-col max-w-xs w-full bg-white transform ${
+          className={`relative flex-1 flex flex-col max-w-xs w-full transform ${
             isOpen ? 'translate-x-0' : '-translate-x-full'
           } transition duration-300 ease-in-out`}
         >
@@ -95,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64 border-r border-gray-200 bg-white">
+        <div className="flex flex-col w-64 border-r border-gray-200">
           <div className="flex flex-col h-0 flex-1">
             <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200">
               <span className="font-bold text-xl text-blue-600">Divine Developer</span>

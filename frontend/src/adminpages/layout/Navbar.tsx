@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Bell, Settings, User, LogOut, Search, Menu } from 'lucide-react';
+import { useAppearance } from '../../contexts/AppearanceContext';
+import { Bell, Settings, User, LogOut, Search, Menu, Sun, Moon } from 'lucide-react';
 
 interface NavbarProps {
   toggleSidebar: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
+  const { settings: appearanceSettings } = useAppearance();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
-    <header className="bg-white border-b border-gray-200 z-30">
+    <header className="border-b border-gray-200 z-30">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -43,6 +45,24 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              className="relative p-1 text-gray-500 hover:text-blue-600 focus:outline-none"
+              onClick={() => {
+                const newTheme = appearanceSettings.theme === 'dark' ? 'light' : 'dark';
+                // This will trigger the appearance context update
+                document.documentElement.classList.remove('light', 'dark');
+                document.documentElement.classList.add(newTheme);
+              }}
+            >
+              {appearanceSettings.theme === 'dark' ? (
+                <Sun className="h-6 w-6" />
+              ) : (
+                <Moon className="h-6 w-6" />
+              )}
+            </button>
+
             {/* Notifications */}
             <div className="relative">
               <button

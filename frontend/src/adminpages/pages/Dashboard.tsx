@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import { User } from 'lucide-react';
 import QuickStats from '../component/QuickStats';
 import ProjectStatus from '../component/ProjectStatus';
@@ -11,6 +12,7 @@ import CreateProjectButton from '../component/CreateProjectButton';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { settings: appearanceSettings } = useAppearance();
 
   const handleProfileClick = () => {
     navigate('/profile');

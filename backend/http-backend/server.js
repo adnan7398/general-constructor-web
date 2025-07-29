@@ -10,6 +10,7 @@ import TeamRouter from "./routes/teammember.js";
 import accountRoutes from "./routes/account.js"; // Assuming you have a route for site accounts
 import resourcesrouter from './routes/resources.js';
 import profileRoutes from './routes/profile.js';
+import settingsRoutes from './routes/settings.js';
 
 const app = express();
 const allowedOrigins = [
@@ -48,6 +49,7 @@ app.use("/team",TeamRouter);
 app.use("/account",accountRoutes);
 app.use('/resources', resourcesrouter);
 app.use('/profile', profileRoutes);
+app.use('/settings', settingsRoutes);
 
 const PORT = process.env.PORT || 3000;
 console.log(`MongoDB URL : ${process.env.MONGO_URL}`);

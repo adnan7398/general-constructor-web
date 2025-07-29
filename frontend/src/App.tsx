@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AppearanceProvider } from './contexts/AppearanceContext';
 import Navbar from './pages/components/Navbar';
 import HeroSection from './pages/components/HeroSection';
 import AboutSection from './pages/components/AboutSection';
@@ -16,12 +17,14 @@ import SiteAccountPage from './adminpages/pages/account'
 import Resources from './adminpages/pages/resources';
 import Account from './adminpages/pages/totalacount';
 import ProfilePage from './adminpages/pages/profile';
+import SettingsPage from './adminpages/pages/settings';
 import Layout from './adminpages/layout';
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen">
+    <AppearanceProvider>
+      <Router>
+        <div className="min-h-screen">
         <Routes>
           <Route
             path="/"
@@ -71,14 +74,20 @@ function App() {
               <Account />
             </Layout>
           } />
-          <Route path="/profile" element={
-            <Layout>
-              <ProfilePage />
-            </Layout>
-          } />
+                  <Route path="/profile" element={
+          <Layout>
+            <ProfilePage />
+          </Layout>
+        } />
+        <Route path="/settings" element={
+          <Layout>
+            <SettingsPage />
+          </Layout>
+        } />
         </Routes>
       </div>
-    </Router>
+      </Router>
+    </AppearanceProvider>
   );
 }
 
