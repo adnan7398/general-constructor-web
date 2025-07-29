@@ -11,7 +11,7 @@ interface AccountEntry {
   paymentMode?: string;
   description?: string;
   type: 'INCOME' | 'EXPENSE';
-  typeofExpense?: 'LABOUR' | 'MAINTENANCE';
+  typeofExpense?: 'LABOUR' | 'MATERIAL';
   category: string;
 }
 
@@ -656,11 +656,11 @@ const expense = filteredEntries
                 <select 
                   value={newEntry.typeofExpense || ''}
                   className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MAINTENANCE' })}
+                  onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MATERIAL' })}
                 >
                   <option value="">Select Type</option>
                   <option value="LABOUR"> Labour</option>
-                  <option value="MAINTENANCE"> Maintenance</option>
+                  <option value="MATERIAL"> Material</option>
                 </select>
               </div>
             </div>

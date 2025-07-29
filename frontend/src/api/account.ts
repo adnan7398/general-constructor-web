@@ -2,7 +2,7 @@ export interface Entry {
     _id: string;
     date: Date;
     type: 'INCOME' | 'EXPENSE';
-    typeofExpense: 'LABOUR' | 'MAINTENANCE';
+    typeofExpense: 'LABOUR' | 'MATERIAL';
     category: string;
     particular?: string;
     amount: number;

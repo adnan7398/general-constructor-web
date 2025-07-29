@@ -1,13 +1,16 @@
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userProfileSchema = new mongoose.Schema({
   name: { type: String, required: true },
   role: { type: String, enum: ["Worker", "Manager", "Client"], required: true },
   phone: { type: String },
-  email: { type: String },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
   address: { type: String },
   projectAssigned: { type: String },
+  profilePicture: { type: String }, // URL to stored image
   joinedDate: { type: Date, default: Date.now },
   notes: { type: String },
   createdBy: {
@@ -15,6 +18,24 @@ const userProfileSchema = new mongoose.Schema({
     ref: "Admin", 
     required: true,
   },
+}, { timestamps: true });
+
+// Hash password before saving
+userProfileSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-module.exports = mongoose.model("UserProfile", userProfileSchema);
+// Method to compare password
+userProfileSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+export default mongoose.model("UserProfile", userProfileSchema);

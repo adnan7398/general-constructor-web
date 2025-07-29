@@ -81,7 +81,7 @@ accountRoutes.put('/:siteName', async (req, res) => {
 
     console.log('PUT request received:', { siteName, entryId, newEntry });
     console.log('newEntry.typeofExpense:', newEntry.typeofExpense);
-    console.log('Valid enum values:', ['LABOUR', 'MAINTENANCE']);
+    console.log('Valid enum values:', ['LABOUR', 'MATERIAL']);
 
     if (!entryId || !newEntry) {
       return res.status(400).json({ error: 'entryId and newEntry are required' });
@@ -107,7 +107,7 @@ accountRoutes.put('/:siteName', async (req, res) => {
     
     // Validate enum values
     const validTypes = ['INCOME', 'EXPENSE'];
-    const validTypeofExpense = ['LABOUR', 'MAINTENANCE'];
+    const validTypeofExpense = ['LABOUR', 'MATERIAL'];
     
     if (!validTypes.includes(newEntry.type)) {
       return res.status(400).json({ 
