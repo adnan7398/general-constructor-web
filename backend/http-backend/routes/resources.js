@@ -55,6 +55,16 @@ resourcesrouter.get('/', async (req, res) => {
     }
   });
 
+resourcesrouter.get('/site/:siteName', async (req, res) => {
+    try {
+      const { siteName } = req.params;
+      const resources = await Resource.find({ siteName });
+      res.status(200).json(resources);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch resources by site', details: error });
+    }
+  });
+
 resourcesrouter.get('/:id', async (req, res) => {
     try {
       const { id } = req.params;
@@ -69,5 +79,38 @@ resourcesrouter.get('/:id', async (req, res) => {
       console.error('Error fetching resource:', err);
       res.status(500).json({ error: 'Failed to fetch resource', details: err.message });
     }
-  });  
+  });
+
+resourcesrouter.put('/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updatedResource = await Resource.findByIdAndUpdate(id, req.body, { new: true });
+  
+      if (!updatedResource) {
+        return res.status(404).json({ error: 'Resource not found' });
+      }
+  
+      res.status(200).json({ success: true, resource: updatedResource });
+    } catch (err) {
+      console.error('Error updating resource:', err);
+      res.status(500).json({ error: 'Failed to update resource', details: err.message });
+    }
+  });
+
+resourcesrouter.delete('/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deletedResource = await Resource.findByIdAndDelete(id);
+  
+      if (!deletedResource) {
+        return res.status(404).json({ error: 'Resource not found' });
+      }
+  
+      res.status(200).json({ success: true, message: 'Resource deleted successfully' });
+    } catch (err) {
+      console.error('Error deleting resource:', err);
+      res.status(500).json({ error: 'Failed to delete resource', details: err.message });
+    }
+  });
+
 export default resourcesrouter;

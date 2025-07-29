@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Building, Check, Clock, Search } from 'lucide-react';
-import Layout from '../layout';
 import {
   Project,
   getPendingProjects,
@@ -70,7 +69,7 @@ const Projects: React.FC = () => {
     }).format(amount);
 
   return (
-    <Layout>
+    <div className="w-full">
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
@@ -211,7 +210,7 @@ const Projects: React.FC = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 

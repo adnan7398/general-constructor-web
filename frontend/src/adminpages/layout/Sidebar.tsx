@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Building, 
@@ -18,12 +18,14 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
+  const location = useLocation();
+  
   const navigationItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '/' },
+    { name: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '/dashboard' },
     { name: 'Projects', icon: <Building className="h-5 w-5" />, href: '/project' },
     { name: 'Tasks', icon: <CheckSquare className="h-5 w-5" />, href: '/tasks' },
     { name: 'Budgets', icon: <DollarSign className="h-5 w-5" />, href: '/budgets' },
-    { name: 'TeamMember', icon: <TeamMember className="h-5 w-5" />, href: '/team' },
+    { name: 'Team Members', icon: <TeamMember className="h-5 w-5" />, href: '/team' },
     { name: 'Resources', icon: <HardHat className="h-5 w-5" />, href: '/resources' },
     { name: 'Reports', icon: <BarChart className="h-5 w-5" />, href: '/reports' },
     { name: 'Settings', icon: <Settings className="h-5 w-5" />, href: '/settings' },
@@ -68,9 +70,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                  className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
+                    location.pathname === item.href
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                  }`}
                 >
-                  <div className="mr-4 text-gray-500 group-hover:text-blue-500">
+                  <div className={`mr-4 ${
+                    location.pathname === item.href
+                      ? 'text-blue-500'
+                      : 'text-gray-500 group-hover:text-blue-500'
+                  }`}>
                     {item.icon}
                   </div>
                   {item.name}
@@ -91,26 +101,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="flex-1 px-2 py-4 space-y-1">
                 {navigationItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                      item.name === 'Dashboard'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                                  <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                    location.pathname === item.href
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                  }`}
+                >
+                  <div
+                    className={`mr-3 ${
+                      location.pathname === item.href
+                        ? 'text-blue-500'
+                        : 'text-gray-500 group-hover:text-blue-500'
                     }`}
                   >
-                    <div
-                      className={`mr-3 ${
-                        item.name === 'Dashboard'
-                          ? 'text-blue-500'
-                          : 'text-gray-500 group-hover:text-blue-500'
-                      }`}
-                    >
-                      {item.icon}
-                    </div>
-                    {item.name}
-                  </Link>
+                    {item.icon}
+                  </div>
+                  {item.name}
+                </Link>
                 ))}
               </nav>
             </div>

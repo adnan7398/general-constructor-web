@@ -1,5 +1,4 @@
 import React from 'react';
-import Layout from '../layout';
 import QuickStats from '../component/QuickStats';
 import ProjectStatus from '../component/ProjectStatus';
 import TaskOverview from '../component/TaskOverview';
@@ -10,7 +9,7 @@ import CreateProjectButton from '../component/CreateProjectButton';
 
 const Dashboard: React.FC = () => {
   return (
-    <Layout>
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <CreateProjectButton />
@@ -31,7 +30,7 @@ const Dashboard: React.FC = () => {
           <Notifications />
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 
