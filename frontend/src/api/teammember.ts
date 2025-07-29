@@ -34,6 +34,11 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
   return formatted;
 };
 
+export const getAllProjects = async () => {
+  const res = await axios.get('https://general-constructor-web-2.onrender.com/project/all');
+  return res.data;
+};
+
 export const addTeamMember = async (
   member: Omit<TeamMember, '_id'>
 ): Promise<TeamMember> => {

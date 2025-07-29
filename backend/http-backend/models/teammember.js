@@ -1,11 +1,5 @@
-import mongoose from 'mongoose';
-
 const teamMemberSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
+  name: { type: String, required: true, trim: true },
   role: {
     type: String,
     enum: ['Engineer', 'Architect', 'Contractor', 'Manager', 'Supervisor', 'Worker'],
@@ -15,23 +9,8 @@ const teamMemberSchema = new mongoose.Schema({
     phone: String,
     email: String
   },
-  profileImage: {
-    type: String,
-    default: 'https://www.gravatar.com/avatar/default'
-  },
-  assignedProject: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: 'Project',
-    default: [],
-  },
-  joinedDate: {
-    type: Date,
-    default: Date.now
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  }
+  profileImage: { type: String, default: 'https://www.gravatar.com/avatar/default' },
+  assignedProject: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project', default: [] }],
+  joinedDate: { type: Date, default: Date.now },
+  isActive: { type: Boolean, default: true }
 });
-
-export default mongoose.model('TeamMember', teamMemberSchema);

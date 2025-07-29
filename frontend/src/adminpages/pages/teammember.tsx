@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getTeamMembers, addTeamMember, deleteTeamMember } from '../../api/teammember';
+import { getTeamMembers, addTeamMember, deleteTeamMember,getAllProjects } from '../../api/teammember';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface TeamMember {
@@ -19,6 +19,7 @@ interface TeamMember {
 const TeamMembers: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [projects, setProjects] = useState<{ _id: string; name: string }[]>([]);
 
   const [form, setForm] = useState<Omit<TeamMember, '_id'>>({
     name: '',
@@ -32,11 +33,19 @@ const TeamMembers: React.FC = () => {
     joinedDate: new Date(),
     isActive: true,
   });
+  const fetchProjects = async () => {
+    try {
+      const data = await getAllProjects();
+      setProjects(data); // Make sure backend sends `{ _id, name }`
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+    }
+  };
 
   useEffect(() => {
     fetchMembers();
+    fetchProjects();
   }, []);
-
   const fetchMembers = async () => {
     const data = await getTeamMembers();
     setMembers(data);
@@ -149,15 +158,21 @@ const TeamMembers: React.FC = () => {
                 onChange={(e) => setForm({ ...form, profileImage: e.target.value })}
                 className="w-full border p-2 rounded"
               />
-              <input
-                type="text"
-                placeholder="Assigned Project ID (comma separated)"
-                value={form.assignedProject.join(',')}
-                onChange={(e) =>
-                  setForm({ ...form, assignedProject: e.target.value.split(',').map((id) => id.trim()) })
-                }
-                className="w-full border p-2 rounded"
-              />
+                          <select
+              multiple
+              value={form.assignedProject}
+              onChange={(e) => {
+                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                setForm({ ...form, assignedProject: selectedOptions });
+              }}
+              className="w-full border p-2 rounded h-32"
+            >
+              {projects.map(project => (
+                <option key={project._id} value={project._id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
               <input
                 type="date"
                 value={form.joinedDate.toISOString().split('T')[0]}
