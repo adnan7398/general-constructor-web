@@ -13,7 +13,8 @@ import {
   Phone,
   Mail,
   MapPin,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 
 interface UserProfile {
@@ -24,7 +25,7 @@ interface UserProfile {
   address?: string;
   notes?: string;
   role: string;
-  profilePicture?: string;
+  profileImage?: string;
   joinedDate: string;
 }
 
@@ -58,29 +59,69 @@ export default function ProfilePage() {
   });
 
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/profile';
+  const API_BASE_URL = 'http://localhost:3000/profile';
+
+  // Temporary login function for testing
+  const loginForTesting = async () => {
+    try {
+      console.log('Attempting to login with test credentials...');
+      const response = await fetch('http://localhost:3000/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: 'admin@test.com',
+          password: 'password123'
+        })
+      });
+
+      console.log('Login response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Login successful, user:', data.user.email);
+        localStorage.setItem('token', data.token);
+        window.location.reload(); // Reload to use the new token
+      } else {
+        const errorData = await response.json();
+        console.error('Login failed:', errorData);
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (!token) {
+      // If no token, try to login automatically for testing
+      loginForTesting();
+    } else {
+      fetchProfile();
+    }
+  }, [token]);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      // For demo purposes, using a mock user ID. In real app, get from auth context
-      const userId = localStorage.getItem('userId') || '507f1f77bcf86cd799439011';
+      console.log('Fetching profile with token:', token?.substring(0, 20) + '...');
       
-      const response = await fetch(`${API_BASE_URL}/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Profile response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Profile fetch error:', errorText);
         throw new Error('Failed to fetch profile');
       }
 
       const data = await response.json();
+      console.log('Profile data received:', data);
       setProfile(data);
       setFormData({
         name: data.name || '',
@@ -90,6 +131,7 @@ export default function ProfilePage() {
         notes: data.notes || ''
       });
     } catch (err: any) {
+      console.error('Profile fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -114,9 +156,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
-      const userId = localStorage.getItem('userId') || '507f1f77bcf86cd799439011';
-      
-      const response = await fetch(`${API_BASE_URL}/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -151,9 +191,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const userId = localStorage.getItem('userId') || '507f1f77bcf86cd799439011';
-      
-      const response = await fetch(`${API_BASE_URL}/${userId}/change-password`, {
+      const response = await fetch(`${API_BASE_URL}/me/change-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -199,12 +237,11 @@ export default function ProfilePage() {
 
     try {
       setIsUploading(true);
-      const userId = localStorage.getItem('userId') || '507f1f77bcf86cd799439011';
       
       const formData = new FormData();
-      formData.append('profilePicture', file);
+      formData.append('profileImage', file);
 
-      const response = await fetch(`${API_BASE_URL}/${userId}/upload-picture`, {
+      const response = await fetch(`${API_BASE_URL}/me/upload-picture`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -218,7 +255,7 @@ export default function ProfilePage() {
       }
 
       const data = await response.json();
-      setProfile(prev => prev ? { ...prev, profilePicture: data.profilePicture } : null);
+      setProfile(prev => prev ? { ...prev, profileImage: data.profileImage } : null);
       alert('Profile picture uploaded successfully!');
     } catch (err: any) {
       alert(err.message);
@@ -233,9 +270,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const userId = localStorage.getItem('userId') || '507f1f77bcf86cd799439011';
-      
-      const response = await fetch(`${API_BASE_URL}/${userId}/profile-picture`, {
+      const response = await fetch(`${API_BASE_URL}/me/profile-image`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -247,11 +282,16 @@ export default function ProfilePage() {
         throw new Error(errorData.error || 'Failed to delete picture');
       }
 
-      setProfile(prev => prev ? { ...prev, profilePicture: undefined } : null);
+      setProfile(prev => prev ? { ...prev, profileImage: undefined } : null);
       alert('Profile picture deleted successfully!');
     } catch (err: any) {
       alert(err.message);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.reload();
   };
 
   if (loading) {
@@ -270,12 +310,23 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchProfile}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
+          <div className="space-x-4">
+            <button 
+              onClick={fetchProfile}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Retry
+            </button>
+            <button 
+              onClick={() => {
+                localStorage.removeItem('token');
+                window.location.reload();
+              }}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              Clear Token & Reload
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -286,16 +337,25 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-              <User className="w-8 h-8 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                <User className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                  Profile Settings
+                </h1>
+                <p className="text-slate-600 mt-1">Manage your account information and preferences</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                Profile Settings
-              </h1>
-              <p className="text-slate-600 mt-1">Manage your account information and preferences</p>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
           </div>
         </div>
 
@@ -306,13 +366,13 @@ export default function ProfilePage() {
               <div className="text-center space-y-4">
                 <div className="relative inline-block">
                   <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 border-4 border-white shadow-lg">
-                    {profile?.profilePicture ? (
-                      <img 
-                        src={`https://general-constructor-web-2.onrender.com${profile.profilePicture}`}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
+                                         {profile?.profileImage ? (
+                       <img 
+                         src={`http://localhost:3000${profile.profileImage}`}
+                         alt="Profile"
+                         className="w-full h-full object-cover"
+                       />
+                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <User className="w-16 h-16 text-slate-400" />
                       </div>
@@ -340,15 +400,15 @@ export default function ProfilePage() {
                   </p>
                 </div>
 
-                {profile?.profilePicture && (
-                  <button
-                    onClick={handleDeletePicture}
-                    className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Remove Picture
-                  </button>
-                )}
+                                 {profile?.profileImage && (
+                   <button
+                     onClick={handleDeletePicture}
+                     className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm"
+                   >
+                     <Trash2 className="w-4 h-4" />
+                     Remove Picture
+                   </button>
+                 )}
 
                 {isUploading && (
                   <div className="text-blue-600 text-sm">

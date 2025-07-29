@@ -219,11 +219,11 @@ export default function SiteAccountPage() {
       } else {
         // Add new entry
         const response = await fetch(`${API_BASE_URL}/`, {
-          method: 'POST',
-          headers: {'Authorization': `Bearer ${token}`,
-           'Content-Type': 'application/json' },
-          body: JSON.stringify({ siteName, entries: [newEntry] })
-        });
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${token}`,
+         'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteName, entries: [newEntry] })
+      });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -231,7 +231,7 @@ export default function SiteAccountPage() {
         }
 
         const result = await response.json();
-        setEntries(prev => [...prev, newEntry as AccountEntry]);
+      setEntries(prev => [...prev, newEntry as AccountEntry]);
       }
 
       setNewEntry({});
@@ -391,7 +391,7 @@ const expense = filteredEntries
           </div>
 
           <div className="overflow-x-auto">
-                        <div className="bg-white/90 p-4 rounded-xl mb-6 flex flex-wrap gap-4 items-center">
+          <div className="bg-white/90 p-4 rounded-xl mb-6 flex flex-wrap gap-4 items-center">
                 <input
                   type="text"
                   placeholder="Filter by particular"

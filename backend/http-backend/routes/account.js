@@ -138,9 +138,9 @@ accountRoutes.put('/:siteName', async (req, res) => {
     console.log('About to save site with entries:', site.entries);
     
     try {
-      await site.save();
+    await site.save();
       console.log('Site saved successfully');
-      res.status(200).json({ message: 'Entry updated successfully', site });
+    res.status(200).json({ message: 'Entry updated successfully', site });
     } catch (saveError) {
       console.error('Save error:', saveError);
       res.status(500).json({ error: saveError.message });

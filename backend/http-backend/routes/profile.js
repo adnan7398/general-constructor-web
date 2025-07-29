@@ -2,13 +2,14 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import UserProfile from '../models/userprofile.js';
+import User from '../models/admin.js';
 import AdminMiddleware from '../middleware/adminmiddleware.js';
 
 const profileRoutes = express.Router();
 profileRoutes.use(express.json());
 profileRoutes.use(AdminMiddleware);
 
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = 'uploads/profiles';
@@ -41,11 +42,17 @@ const upload = multer({
   }
 });
 
-// Get user profile
-profileRoutes.get('/:userId', async (req, res) => {
+// Get current user profile (from token)
+profileRoutes.get('/me', async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await UserProfile.findById(userId).select('-password');
+    // Get user ID from the token (assuming it's stored in req.user by middleware)
+    const userId = req.user?.id || req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const user = await User.findById(userId).select('-password');
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -58,13 +65,17 @@ profileRoutes.get('/:userId', async (req, res) => {
   }
 });
 
-// Update profile information
-profileRoutes.put('/:userId', async (req, res) => {
+// Update current user profile
+profileRoutes.put('/me', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?.id || req.user?._id;
     const { name, phone, email, address, notes } = req.body;
     
-    const user = await UserProfile.findById(userId);
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -90,52 +101,60 @@ profileRoutes.put('/:userId', async (req, res) => {
 });
 
 // Upload profile picture
-profileRoutes.post('/:userId/upload-picture', upload.single('profilePicture'), async (req, res) => {
+profileRoutes.post('/me/upload-picture', upload.single('profileImage'), async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?.id || req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
     
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
     
-    const user = await UserProfile.findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Delete old profile picture if exists
-    if (user.profilePicture) {
-      const oldPicturePath = user.profilePicture.replace('/uploads', 'uploads');
-      if (fs.existsSync(oldPicturePath)) {
-        fs.unlinkSync(oldPicturePath);
+    // Delete old profile image if exists and it's not the default gravatar
+    if (user.profileImage && !user.profileImage.includes('gravatar.com')) {
+      const oldImagePath = user.profileImage.replace('/uploads', 'uploads');
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
       }
     }
     
-    // Update profile picture URL
-    user.profilePicture = `/uploads/profiles/${req.file.filename}`;
+    // Update profile image URL
+    user.profileImage = `/uploads/profiles/${req.file.filename}`;
     await user.save();
     
     res.json({ 
-      message: 'Profile picture uploaded successfully', 
-      profilePicture: user.profilePicture 
+      message: 'Profile image uploaded successfully', 
+      profileImage: user.profileImage 
     });
   } catch (error) {
-    console.error('Error uploading profile picture:', error);
-    res.status(500).json({ error: 'Failed to upload profile picture' });
+    console.error('Error uploading profile image:', error);
+    res.status(500).json({ error: 'Failed to upload profile image' });
   }
 });
 
 // Change password
-profileRoutes.put('/:userId/change-password', async (req, res) => {
+profileRoutes.put('/me/change-password', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?.id || req.user?._id;
     const { currentPassword, newPassword } = req.body;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
     
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Current password and new password are required' });
     }
     
-    const user = await UserProfile.findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -157,29 +176,33 @@ profileRoutes.put('/:userId/change-password', async (req, res) => {
   }
 });
 
-// Delete profile picture
-profileRoutes.delete('/:userId/profile-picture', async (req, res) => {
+// Delete profile image
+profileRoutes.delete('/me/profile-image', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?.id || req.user?._id;
     
-    const user = await UserProfile.findById(userId);
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    if (user.profilePicture) {
-      const picturePath = user.profilePicture.replace('/uploads', 'uploads');
-      if (fs.existsSync(picturePath)) {
-        fs.unlinkSync(picturePath);
+    if (user.profileImage && !user.profileImage.includes('gravatar.com')) {
+      const imagePath = user.profileImage.replace('/uploads', 'uploads');
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
       }
-      user.profilePicture = null;
+      user.profileImage = 'https://www.gravatar.com/avatar/';
       await user.save();
     }
     
-    res.json({ message: 'Profile picture deleted successfully' });
+    res.json({ message: 'Profile image deleted successfully' });
   } catch (error) {
-    console.error('Error deleting profile picture:', error);
-    res.status(500).json({ error: 'Failed to delete profile picture' });
+    console.error('Error deleting profile image:', error);
+    res.status(500).json({ error: 'Failed to delete profile image' });
   }
 });
 

@@ -10,7 +10,8 @@ function AdminMiddleware(req,res,next){
         if(!decoded){
             return res.status(401).json({message: 'Unauthorized'});
         }
-        console.log
+        console.log('User authenticated:', decoded.id);
+        req.user = { id: decoded.id };
         req.userId = decoded.id;
         next();
 

@@ -1,95 +1,171 @@
-import Admin from "../models/admin.js";
-import express from "express"
-import  bcrypt from "bcryptjs"
-import  jwt from "jsonwebtoken"
-import {z} from "zod";
-const userRouter = express.Router();
-userRouter.post("/signup", async function (req, res) {
-    const requirebody = z.object({
-        email: z.string().min(3).max(50).email(),
-        name: z.string().min(3).max(100),
-        profileImage: z.string().optional(),
-        role: z.enum(["admin", "superadmin"]).optional(),
-        password: z.string().min(8).max(20).refine((password) => {
-            const uppercase = /[A-Z]/.test(password);
-            const lowercase = /[a-z]/.test(password);
-            const specialchar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-            return uppercase && lowercase && specialchar;
-        }, {
-            message: "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, and one special character."
-        })
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/admin.js';
+import AdminMiddleware from '../middleware/adminmiddleware.js';
+
+const adminRoutes = express.Router();
+adminRoutes.use(express.json());
+
+// Register new user
+adminRoutes.post('/register', async (req, res) => {
+  try {
+    const { name, email, password, role, phone, address } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists with this email' });
+    }
+
+    // Create new user
+    const user = new User({
+      name,
+      email,
+      password,
+      role: role || 'client',
+      phone,
+      address
     });
-    const parsedata = requirebody.safeParse(req.body);
-    if (!parsedata.success) {
-        res.json({
-            message: "incorrect detail",
-            error: parsedata.error
-        })
-        return
-    }
-    const email = req.body.email;
-    const password = req.body.password;
-    const name= req.body.name;
-    const profileImage = req.body.profileImage;
-    const role = req.body.role || "admin";
 
-    let errorthrown = false;
-    try {
-        const hashpassword = await bcrypt.hash(password, 5);
-        //const profileImage = req.file ? /uploads/${ req.file.filename }: null;
-        await Admin.create({
-            email: email,
-            password: hashpassword,
-            name: name,
-            profileImage: profileImage || "https://www.gravatar.com/avatar/",
-            role:role ||"admin"
-        })
-    } catch (e) {
-        res.status(403).json({
-            error: e.message
-        })
-        errorthrown = true
-    }
-    if (!errorthrown) {
-        res.json({
-            message: "You Are successfuly signed up"
-        })
-    }
+    await user.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: userResponse,
+      token
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Failed to register user' });
+  }
 });
-userRouter.post("/signin", async function (req, res) {
-    const email = req.body.email;
-    const password = req.body.password;
-    const response = await Admin.findOne({
-        email: email
-    })
-    if (!response) {
-        res.status(403).json({
-            message: "User does not exist"
-        })
-        return
-    }
-    try {
-        const comparepassword = await bcrypt.compare(password, response.password);
-        if (comparepassword) {
-            const token = jwt.sign({
-                id: response._id.toString()
-            }, process.env.JWT_SECRET);
-            res.json({
-                message: "You successfully logged in",
-                token: token,
-                userId: response._id.toString()
-            });
-        } else {
-            res.status(403).json({
-                message: "Wrong username or password"
-            });
-        }
-    } catch (error) {
-        res.status(403).json({
-            message: "Wrong username or password:",
-            error: error.message
-        })
-    }
-})
 
-export default userRouter;
+// Login user
+adminRoutes.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json({
+      message: 'Login successful',
+      user: userResponse,
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Get current user (protected route)
+adminRoutes.get('/me', AdminMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Get all users (admin only)
+adminRoutes.get('/users', AdminMiddleware, async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password');
+    res.json(users);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
+// Update user
+adminRoutes.put('/users/:userId', AdminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, email, role, phone, address, notes } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update fields
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (role) user.role = role;
+    if (phone) user.phone = phone;
+    if (address) user.address = address;
+    if (notes) user.notes = notes;
+
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json({ message: 'User updated successfully', user: userResponse });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete user
+adminRoutes.delete('/users/:userId', AdminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+export default adminRoutes;
