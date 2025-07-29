@@ -15,6 +15,7 @@ import TeamMembers from './adminpages/pages/teammember';
 import SiteAccountPage from './adminpages/pages/account'
 import Resources from './adminpages/pages/resources';
 import Account from './adminpages/pages/totalacount';
+import ProfilePage from './adminpages/pages/profile';
 import Layout from './adminpages/layout';
 
 function App() {
@@ -68,6 +69,11 @@ function App() {
           <Route path="/totalaccount" element={
             <Layout>
               <Account />
+            </Layout>
+          } />
+          <Route path="/profile" element={
+            <Layout>
+              <ProfilePage />
             </Layout>
           } />
         </Routes>

@@ -2,14 +2,13 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import UserProfile from '../models/userprofileschema.js';
+import UserProfile from '../models/userprofile.js';
 import AdminMiddleware from '../middleware/adminmiddleware.js';
 
 const profileRoutes = express.Router();
 profileRoutes.use(express.json());
 profileRoutes.use(AdminMiddleware);
 
-// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = 'uploads/profiles';
