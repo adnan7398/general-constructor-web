@@ -135,9 +135,16 @@ accountRoutes.put('/:siteName', async (req, res) => {
       site.entries[index] = { ...newEntry, _id: existingEntry._id };
     }
 
-    await site.save();
-
-    res.status(200).json({ message: 'Entry updated successfully', site });
+    console.log('About to save site with entries:', site.entries);
+    
+    try {
+      await site.save();
+      console.log('Site saved successfully');
+      res.status(200).json({ message: 'Entry updated successfully', site });
+    } catch (saveError) {
+      console.error('Save error:', saveError);
+      res.status(500).json({ error: saveError.message });
+    }
   } catch (err) {
     console.error('Error updating or adding entry:', err);
     res.status(500).json({ error: err.message });
