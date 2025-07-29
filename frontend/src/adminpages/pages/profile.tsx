@@ -61,13 +61,13 @@ export default function ProfilePage() {
   });
 
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'http://localhost:3000/profile';
+  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/profile';
 
   // Temporary login function for testing
   const loginForTesting = async () => {
     try {
       console.log('Attempting to login with test credentials...');
-      const response = await fetch('http://localhost:3000/admin/login', {
+      const response = await fetch('https://general-constructor-web-2.onrender.com/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
