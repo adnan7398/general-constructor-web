@@ -92,7 +92,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false); // Start with false to show default settings
   const [error, setError] = useState<string | null>(null);
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'http://localhost:3000/settings';
+  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/settings';
 
   console.log('Settings component - Token:', token ? 'exists' : 'missing');
   console.log('Settings component - Current settings:', settings);
@@ -240,7 +240,7 @@ export default function SettingsPage() {
     }
     
     try {
-      const response = await fetch('http://localhost:3000/profile/me/change-password', {
+      const response = await fetch('https://general-constructor-web-2.onrender.com/profile/me/change-password', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
