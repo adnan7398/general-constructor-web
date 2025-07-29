@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -8,7 +8,6 @@ import {
   Trash2, 
   Save, 
   X, 
-  ExternalLink,
   BarChart3,
   Activity,
   Hammer,
@@ -24,812 +23,716 @@ import {
   DollarSign,
   Phone,
   Mail,
-  Shield
+  Shield,
+  Package,
+  Settings,
+  Eye
 } from 'lucide-react';
+import { 
+  getAllResources, 
+  createResource, 
+  updateResource, 
+  deleteResource, 
+  getAllProjects,
+  Resource,
+  Project 
+} from '../../api/resources';
 
-interface ConstructionResource {
-  _id?: string;
-  siteName: string;
-  name: string;
-  type: 'equipment' | 'material' | 'labor' | 'contractor' | 'permit' | 'vehicle';
-  status: 'active' | 'inactive' | 'maintenance' | 'pending';
-  location?: string;
-  contact?: string;
-  cost?: number;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  createdAt?: string;
-}
-
-interface GroupedResources {
-  [siteName: string]: ConstructionResource[];
-}
-
-// Mock API functions for construction management
-const API_BASE = 'http://localhost:3000/resources';
-const api = {
-    getAllResources: async (): Promise<GroupedResources> => {
-      try {
-        const res = await fetch('http://localhost:3000/resources');
-        if (!res.ok) throw new Error('Failed to fetch resources');
-  
-        const data = await res.json();
-        
-        // Optional: group by site if needed
-        const grouped: GroupedResources = data.reduce((acc: any, resource: any) => {
-          const site = resource.site || 'Unassigned';
-          if (!acc[site]) acc[site] = [];
-          acc[site].push(resource);
-          return acc;
-        }, {});
-  
-        return grouped;
-      } catch (err) {
-        console.error('API Error:', err);
-        return {};
-      }
-    },  
-  getSiteResources: async (siteName: string): Promise<ConstructionResource[]> => {
-    const grouped = await api.getAllResources();
-    return grouped[siteName] || [];
-  },
-  
-  createResource: async (resource: Omit<ConstructionResource, '_id'>): Promise<ConstructionResource> => {
-    return { ...resource, _id: Date.now().toString() };
-  },
-  
-  deleteResource: async (id: string): Promise<void> => {
-    console.log(`Deleted construction resource ${id}`);
-  }
-};
-
-const  Resources = () =>{
-  const [resources, setResources] = useState<GroupedResources>({});
+const Resources: React.FC = () => {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSite, setSelectedSite] = useState<string>('all');
+  const [selectedProject, setSelectedProject] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingResource, setEditingResource] = useState<ConstructionResource | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'resources'>('dashboard');
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState<Omit<ConstructionResource, '_id'>>({
-    siteName: '',
+  const [formData, setFormData] = useState<Omit<Resource, '_id' | 'createdAt' | 'updatedAt'>>({
     name: '',
-    type: 'equipment',
-    status: 'pending',
+    siteName: '',
+    type: 'Material',
+    quantity: 0,
+    status: 'Available',
     location: '',
-    contact: '',
     cost: 0,
+    startDate: undefined,
+    endDate: undefined,
     description: '',
-    startDate: '',
-    endDate: ''
   });
 
-  // Load resources
   useEffect(() => {
     loadResources();
+    loadProjects();
   }, []);
 
   const loadResources = async () => {
     try {
       setLoading(true);
-      const data = await api.getAllResources();
+      const data = await getAllResources();
       setResources(data);
     } catch (error) {
-      console.error('Failed to load construction resources:', error);
+      console.error('Error loading resources:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Computed statistics
-  const stats = useMemo(() => {
-    const allResources: ConstructionResource[] = Object.values(resources).flat();
-    const totalCost = allResources.reduce((sum, r) => sum + (r.cost || 0), 0);
-    
-    return {
-      total: allResources.length,
-      active: allResources.filter(r => r.status === 'active').length,
-      inactive: allResources.filter(r => r.status === 'inactive').length,
-      maintenance: allResources.filter(r => r.status === 'maintenance').length,
-      pending: allResources.filter(r => r.status === 'pending').length,
-      sites: Object.keys(resources).length,
-      totalCost: totalCost,
-      equipment: allResources.filter(r => r.type === 'equipment').length,
-      materials: allResources.filter(r => r.type === 'material').length,
-      labor: allResources.filter(r => r.type === 'labor').length
-    };
-  }, [resources]);
-
-  // Filter resources
-  const filteredResources = useMemo(() => {
-    let filtered: ConstructionResource[] = [];
-    
-    if (selectedSite === 'all') {
-      filtered = Object.values(resources).flat();
-    } else {
-      filtered = resources[selectedSite] || [];
+  const loadProjects = async () => {
+    try {
+      const data = await getAllProjects();
+      setProjects(data);
+    } catch (error) {
+      console.error('Error loading projects:', error);
     }
-
-    if (searchTerm) {
-      filtered = filtered.filter(resource =>
-        resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.location?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(resource => resource.status === statusFilter);
-    }
-
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(resource => resource.type === typeFilter);
-    }
-
-    return filtered;
-  }, [resources, searchTerm, selectedSite, statusFilter, typeFilter]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingResource) {
-        console.log('Update construction resource:', formData);
+        await updateResource(editingResource._id, formData);
       } else {
-        const newResource = await api.createResource(formData);
-        const updatedResources = { ...resources };
-        if (!updatedResources[formData.siteName]) {
-          updatedResources[formData.siteName] = [];
-        }
-        updatedResources[formData.siteName].push(newResource);
-        setResources(updatedResources);
+        await createResource(formData);
       }
+      setShowAddForm(false);
+      setEditingResource(null);
       resetForm();
+      loadResources();
     } catch (error) {
-      console.error('Failed to save construction resource:', error);
+      console.error('Error saving resource:', error);
     }
   };
 
-  const handleDelete = async (resource: ConstructionResource) => {
-    if (!resource._id || !confirm('Are you sure you want to delete this construction resource?')) return;
-    
-    try {
-      await api.deleteResource(resource._id);
-      const updatedResources = { ...resources };
-      updatedResources[resource.siteName] = updatedResources[resource.siteName].filter(
-        r => r._id !== resource._id
-      );
-      setResources(updatedResources);
-    } catch (error) {
-      console.error('Failed to delete construction resource:', error);
+  const handleDelete = async (resource: Resource) => {
+    if (window.confirm(`Are you sure you want to delete ${resource.name}?`)) {
+      try {
+        await deleteResource(resource._id);
+        loadResources();
+      } catch (error) {
+        console.error('Error deleting resource:', error);
+      }
     }
   };
 
-  const handleEdit = (resource: ConstructionResource) => {
+  const handleEdit = (resource: Resource) => {
     setEditingResource(resource);
     setFormData({
-      siteName: resource.siteName,
       name: resource.name,
+      siteName: resource.siteName,
       type: resource.type,
+      quantity: resource.quantity,
       status: resource.status,
       location: resource.location || '',
-      contact: resource.contact || '',
-      cost: resource.cost || 0,
+      cost: resource.cost,
+      startDate: resource.startDate,
+      endDate: resource.endDate,
       description: resource.description || '',
-      startDate: resource.startDate || '',
-      endDate: resource.endDate || ''
     });
     setShowAddForm(true);
   };
 
   const resetForm = () => {
     setFormData({
-      siteName: '',
       name: '',
-      type: 'equipment',
-      status: 'pending',
+      siteName: '',
+      type: 'Material',
+      quantity: 0,
+      status: 'Available',
       location: '',
-      contact: '',
       cost: 0,
+      startDate: undefined,
+      endDate: undefined,
       description: '',
-      startDate: '',
-      endDate: ''
     });
-    setEditingResource(null);
-    setShowAddForm(false);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-50 border-green-200';
-      case 'inactive': return 'text-red-600 bg-red-50 border-red-200';
-      case 'maintenance': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'pending': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'Available': return 'bg-green-100 text-green-800';
+      case 'In Use': return 'bg-blue-100 text-blue-800';
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      case 'Completed': return 'bg-purple-100 text-purple-800';
+      case 'Damaged': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircle2 className="w-4 h-4" />;
-      case 'inactive': return <AlertCircle className="w-4 h-4" />;
-      case 'maintenance': return <Wrench className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
-      default: return null;
+      case 'Available': return <CheckCircle2 className="h-4 w-4" />;
+      case 'In Use': return <Activity className="h-4 w-4" />;
+      case 'Pending': return <Clock className="h-4 w-4" />;
+      case 'Completed': return <CheckCircle2 className="h-4 w-4" />;
+      case 'Damaged': return <AlertCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'equipment': return <Hammer className="w-5 h-5" />;
-      case 'material': return <Activity className="w-5 h-5" />;
-      case 'labor': return <Users className="w-5 h-5" />;
-      case 'contractor': return <HardHat className="w-5 h-5" />;
-      case 'permit': return <Shield className="w-5 h-5" />;
-      case 'vehicle': return <Truck className="w-5 h-5" />;
-      default: return <Building2 className="w-5 h-5" />;
+      case 'Material': return <Package className="h-4 w-4" />;
+      case 'Equipment': return <Wrench className="h-4 w-4" />;
+      case 'Labor': return <Users className="h-4 w-4" />;
+      case 'Vehicle': return <Truck className="h-4 w-4" />;
+      case 'Other': return <Settings className="h-4 w-4" />;
+      default: return <Package className="h-4 w-4" />;
     }
   };
 
-  const Dashboard = () => (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-600 via-white-700 to-gray-600 rounded-3xl shadow-2xl p-8 text-white">
-        <div className="flex items-center justify-between">
+  const filteredResources = resources.filter((resource) => {
+    const matchesSearch = resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         resource.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesProject = selectedProject === 'all' || resource.siteName === selectedProject;
+    const matchesStatus = statusFilter === 'all' || resource.status === statusFilter;
+    const matchesType = typeFilter === 'all' || resource.type === typeFilter;
+    
+    return matchesSearch && matchesProject && matchesStatus && matchesType;
+  });
+
+  const getProjectName = (siteName: string) => {
+    const project = projects.find(p => p.name === siteName);
+    return project ? project.name : siteName;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  return (
+    <div className="w-full">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Resources Management</h1>
+          <p className="text-gray-600">Manage construction resources and equipment</p>
+        </div>
+        <button
+          onClick={() => {
+            setShowAddForm(true);
+            setEditingResource(null);
+            resetForm();
+          }}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 inline-flex items-center font-medium"
+        >
+          <Plus className="mr-2 w-5 h-5" /> Add Resource
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Package className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Resources</p>
+              <p className="text-2xl font-bold text-gray-900">{resources.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Available</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {resources.filter(r => r.status === 'Available').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Activity className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">In Use</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {resources.filter(r => r.status === 'In Use').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-3 bg-red-100 rounded-lg">
+              <AlertCircle className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Damaged</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {resources.filter(r => r.status === 'Damaged').length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Divine Developer</h1>
-            <p className="text-orange-100 text-lg">Professional Construction Site Management</p>
-            <p className="text-orange-200 text-sm mt-2">Building Excellence, Managing Success</p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search resources..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
-          <div className="hidden md:block">
-            <Building2 className="w-24 h-24 text-orange-200" />
-          </div>
-        </div>
-      </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Resources</p>
-              <p className="text-3xl font-bold">{stats.total}</p>
-            </div>
-            <Building2 className="w-8 h-8 text-blue-200" />
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-green-100 to-green-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Active</p>
-              <p className="text-3xl font-bold">{stats.active}</p>
-            </div>
-            <CheckCircle2 className="w-8 h-8 text-green-200" />
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm font-medium">In Maintenance</p>
-              <p className="text-3xl font-bold">{stats.maintenance}</p>
-            </div>
-            <Wrench className="w-8 h-8 text-orange-200" />
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Total Cost</p>
-              <p className="text-2xl font-bold">${stats.totalCost.toLocaleString()}</p>
-            </div>
-            <DollarSign className="w-8 h-8 text-purple-200" />
-          </div>
-        </div>
-      </div>
-
-      {/* Resource Type Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-orange-100 rounded-xl">
-              <Hammer className="w-6 h-6 text-orange-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Equipment</h3>
-          </div>
-          <p className="text-3xl font-bold text-orange-600">{stats.equipment}</p>
-          <p className="text-gray-600 text-sm">Heavy machinery & tools</p>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-100 rounded-xl">
-              <Activity className="w-6 h-6 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Materials</h3>
-          </div>
-          <p className="text-3xl font-bold text-blue-600">{stats.materials}</p>
-          <p className="text-gray-600 text-sm">Construction materials</p>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-green-100 rounded-xl">
-              <Users className="w-6 h-6 text-green-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">Labor</h3>
-          </div>
-          <p className="text-3xl font-bold text-green-600">{stats.labor}</p>
-          <p className="text-gray-600 text-sm">Workforce & contractors</p>
-        </div>
-      </div>
-
-      {/* Construction Sites Overview */}
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-orange-100 rounded-xl">
-            <BarChart3 className="w-6 h-6 text-orange-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">Construction Sites</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {Object.entries(resources).map(([siteName, siteResources]) => (
-            <div key={siteName} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <Building2 className="w-5 h-5 text-orange-600" />
-                </div>
-                <h3 className="font-semibold text-gray-900">{siteName}</h3>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Resources</span>
-                  <span className="font-semibold text-gray-900">{siteResources.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Active</span>
-                  <span className="font-semibold text-green-600">{siteResources.filter(r => r.status === 'active').length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">In Progress</span>
-                  <span className="font-semibold text-yellow-600">{siteResources.filter(r => r.status === 'pending').length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Cost</span>
-                  <span className="font-semibold text-orange-600">
-                    ${siteResources.reduce((sum, r) => sum + (r.cost || 0), 0).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              
-              <button
-                onClick={() => {
-                  setSelectedSite(siteName);
-                  setCurrentView('resources');
-                }}
-                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-2 px-4 rounded-xl transition-all duration-200 transform hover:scale-105"
-              >
-                Manage Site
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ResourcesView = () => (
-    <div className="space-y-6">
-      {/* Header and Controls */}
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Construction Resource Management</h1>
-            <p className="text-gray-600">Manage equipment, materials, labor, and contractors across all construction sites</p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Project/Site</label>
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Projects</option>
+              {projects.map((project) => (
+                <option key={project._id} value={project.name}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
           </div>
-          
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-medium py-3 px-6 rounded-2xl transition-all duration-200 transform hover:scale-105 flex items-center gap-2 shadow-lg"
-          >
-            <Plus className="w-5 h-5" />
-            Add Resource
-          </button>
-        </div>
-        
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search resources..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-            />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Status</option>
+              <option value="Available">Available</option>
+              <option value="In Use">In Use</option>
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+              <option value="Damaged">Damaged</option>
+            </select>
           </div>
-          
-          <select
-            value={selectedSite}
-            onChange={(e) => setSelectedSite(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-          >
-            <option value="all">All Sites</option>
-            {Object.keys(resources).map(site => (
-              <option key={site} value={site}>{site}</option>
-            ))}
-          </select>
-          
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-          >
-            <option value="all">All Types</option>
-            <option value="equipment">Equipment</option>
-            <option value="material">Materials</option>
-            <option value="labor">Labor</option>
-            <option value="contractor">Contractors</option>
-            <option value="permit">Permits</option>
-            <option value="vehicle">Vehicles</option>
-          </select>
-          
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="pending">Pending</option>
-          </select>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Types</option>
+              <option value="Material">Material</option>
+              <option value="Equipment">Equipment</option>
+              <option value="Labor">Labor</option>
+              <option value="Vehicle">Vehicle</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Resources Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredResources.map((resource) => (
-          <div key={resource._id} className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-xl">
-                  {getTypeIcon(resource.type)}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{resource.name}</h3>
-                  <p className="text-sm text-gray-500">{resource.siteName}</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(resource)}
-                  className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors duration-200"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(resource)}
-                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-200"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Type</span>
-                <span className="font-medium text-gray-900 capitalize">{resource.type}</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Status</span>
-                <div className={`flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium ${getStatusColor(resource.status)}`}>
-                  {getStatusIcon(resource.status)}
-                  <span className="capitalize">{resource.status}</span>
-                </div>
-              </div>
-              
-              {resource.location && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Location</span>
-                  <div className="flex items-center gap-1 text-sm text-gray-700">
-                    <MapPin className="w-3 h-3" />
-                    <span>{resource.location}</span>
-                  </div>
-                </div>
-              )}
-              
-              {resource.contact && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Contact</span>
-                  <div className="flex items-center gap-1 text-sm text-gray-700">
-                    {resource.contact.includes('@') ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />}
-                    <span className="truncate max-w-32">{resource.contact}</span>
-                  </div>
-                </div>
-              )}
-              
-              {resource.cost && resource.cost > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Cost</span>
-                  <div className="flex items-center gap-1 text-sm font-semibold text-green-600">
-                    <DollarSign className="w-3 h-3" />
-                    <span>{resource.cost.toLocaleString()}</span>
-                  </div>
-                </div>
-              )}
-              
-              {resource.startDate && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Start Date</span>
-                  <div className="flex items-center gap-1 text-sm text-gray-700">
-                    <Calendar className="w-3 h-3" />
-                    <span>{new Date(resource.startDate).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              )}
-              
-              {resource.description && (
-                <div>
-                  <span className="text-sm text-gray-600">Description</span>
-                  <p className="text-sm text-gray-900 mt-1">{resource.description}</p>
-                </div>
-              )}
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          <div className="col-span-full text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading resources...</p>
           </div>
-        ))}
+        ) : filteredResources.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-medium text-gray-900 mb-2">No resources found</h3>
+            <p className="text-gray-500 mb-6">Get started by adding your first resource</p>
+            <button
+              onClick={() => {
+                setShowAddForm(true);
+                setEditingResource(null);
+                resetForm();
+              }}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 inline-flex items-center font-medium"
+            >
+              <Plus className="mr-2 w-5 h-5" /> Add Resource
+            </button>
+          </div>
+        ) : (
+          filteredResources.map((resource) => (
+            <div key={resource._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      {getTypeIcon(resource.type)}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{resource.name}</h3>
+                      <p className="text-sm text-gray-600">{resource.type}</p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setSelectedResource(resource)}
+                      className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleEdit(resource)}
+                      className="text-gray-400 hover:text-green-600 transition-colors p-1"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(resource)}
+                      className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Project:</span>
+                    <span className="text-sm font-medium text-gray-900">{getProjectName(resource.siteName)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Quantity:</span>
+                    <span className="text-sm font-medium text-gray-900">{resource.quantity}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Cost:</span>
+                    <span className="text-sm font-medium text-gray-900">{formatCurrency(resource.cost)}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Location:</span>
+                    <span className="text-sm font-medium text-gray-900">{resource.location || 'Not specified'}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
+                      {getStatusIcon(resource.status)}
+                      <span className="ml-1">{resource.status}</span>
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(resource.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {filteredResources.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-500 mb-2">No construction resources found</h3>
-          <p className="text-gray-400">Try adjusting your filters or add a new resource</p>
+      {/* Add/Edit Resource Modal */}
+      {showAddForm && (
+        <div className="fixed z-50 inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold text-white">
+                {editingResource ? 'Edit Resource' : 'Add New Resource'}
+              </h2>
+              <p className="text-blue-100 mt-1">Fill in the resource details below</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Resource Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter resource name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project/Site</label>
+                  <select
+                    required
+                    value={formData.siteName}
+                    onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select Project</option>
+                    {projects.map((project) => (
+                      <option key={project._id} value={project.name}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                  <select
+                    required
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as Resource['type'] })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Material">Material</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Labor">Labor</option>
+                    <option value="Vehicle">Vehicle</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    required
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as Resource['status'] })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Available">Available</option>
+                    <option value="In Use">In Use</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Damaged">Damaged</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter quantity"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cost</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={formData.cost}
+                    onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter cost"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter location"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    value={formData.startDate ? formData.startDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value ? new Date(e.target.value) : undefined })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <input
+                    type="date"
+                    value={formData.endDate ? formData.endDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value ? new Date(e.target.value) : undefined })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter description"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setEditingResource(null);
+                    resetForm();
+                  }}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
+                >
+                  {editingResource ? 'Update Resource' : 'Add Resource'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Resource Details Modal */}
+      {selectedResource && (
+        <div className="fixed z-50 inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white">Resource Details</h2>
+                <button
+                  onClick={() => setSelectedResource(null)}
+                  className="text-white hover:text-blue-100 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{selectedResource.name}</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Type:</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedResource.type}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Project:</span>
+                      <span className="text-sm font-medium text-gray-900">{getProjectName(selectedResource.siteName)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Quantity:</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedResource.quantity}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Cost:</span>
+                      <span className="text-sm font-medium text-gray-900">{formatCurrency(selectedResource.cost)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Location:</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedResource.location || 'Not specified'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedResource.status)}`}>
+                        {getStatusIcon(selectedResource.status)}
+                        <span className="ml-1">{selectedResource.status}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">Additional Information</h4>
+                  <div className="space-y-3">
+                    {selectedResource.startDate && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Start Date:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedResource.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedResource.endDate && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">End Date:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedResource.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Created:</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {new Date(selectedResource.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Last Updated:</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {new Date(selectedResource.updatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {selectedResource.description && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <h4 className="text-md font-semibold text-gray-900 mb-2">Description</h4>
+                      <p className="text-sm text-gray-600">{selectedResource.description}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setSelectedResource(null);
+                    handleEdit(selectedResource);
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
+                >
+                  Edit Resource
+                </button>
+                <button
+                  onClick={() => setSelectedResource(null)}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
-
-  const AddResourceForm = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {editingResource ? 'Edit Construction Resource' : 'Add New Construction Resource'}
-            </h2>
-            <button
-              onClick={resetForm}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Resource Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                  placeholder="Enter resource name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Construction Site</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.siteName}
-                  onChange={(e) => setFormData({...formData, siteName: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                  placeholder="Enter construction site name"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Resource Type</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value as ConstructionResource['type']})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                >
-                  <option value="equipment">Equipment</option>
-                  <option value="material">Material</option>
-                  <option value="labor">Labor</option>
-                  <option value="contractor">Contractor</option>
-                  <option value="permit">Permit</option>
-                  <option value="vehicle">Vehicle</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value as ConstructionResource['status']})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                  placeholder="Site location or storage area"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contact Info</label>
-                <input
-                  type="text"
-                  value={formData.contact}
-                  onChange={(e) => setFormData({...formData, contact: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                  placeholder="Phone number or email"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cost ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.cost}
-                  onChange={(e) => setFormData({...formData, cost: parseFloat(e.target.value) || 0})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                  placeholder="0"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={3}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                placeholder="Brief description of the construction resource"
-              />
-            </div>
-            
-            <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-medium py-3 px-6 rounded-2xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
-              >
-                <Save className="w-5 h-5" />
-                {editingResource ? 'Update Resource' : 'Create Resource'}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-2xl transition-colors duration-200"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading construction resources...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-lg border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-xl">
-                  <Building2 className="w-6 h-6 text-orange-600" />
-                </div>
-                <h1 className="text-xl font-bold text-gray-900">Divine Developer</h1>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setCurrentView('dashboard')}
-                  className={`px-4 py-2 rounded-xl font-medium transition-colors duration-200 ${
-                    currentView === 'dashboard' 
-                      ? 'bg-orange-100 text-orange-700' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => setCurrentView('resources')}
-                  className={`px-4 py-2 rounded-xl font-medium transition-colors duration-200 ${
-                    currentView === 'resources' 
-                      ? 'bg-orange-100 text-orange-700' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  Resources
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentView === 'dashboard' ? <Dashboard /> : <ResourcesView />}
-      </main>
-
-      {/* Add/Edit Form Modal */}
-      {showAddForm && <AddResourceForm />}
-    </div>
-  );
-}
+};
 
 export default Resources;
