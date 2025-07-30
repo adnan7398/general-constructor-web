@@ -37,9 +37,7 @@ const SignIn: React.FC = () => {
       if (!response.ok) {
         throw new Error(data.message || 'Authentication failed');
       }
-  
-      // Save token to localStorage or sessionStorage
-      localStorage.setItem('token', data.token); // 👈 Store JWT
+      localStorage.setItem('token', data.token); 
       console.log('Logged in successfully');
       
       navigate('/dashboard');

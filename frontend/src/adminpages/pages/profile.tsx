@@ -17,6 +17,7 @@ import {
   FileText,
   LogOut
 } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 
 interface UserProfile {
   _id: string;
@@ -294,6 +295,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     window.location.reload();
+    return <Navigate to="/signin" />;
   };
 
   if (loading) {

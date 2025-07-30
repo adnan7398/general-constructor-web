@@ -26,7 +26,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const navigationItems = [
     { name: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '/dashboard' },
     { name: 'Projects', icon: <Building className="h-5 w-5" />, href: '/project' },
-    { name: 'Tasks', icon: <CheckSquare className="h-5 w-5" />, href: '/tasks' },
     { name: 'Budgets', icon: <DollarSign className="h-5 w-5" />, href: '/budgets' },
     { name: 'Team Members', icon: <TeamMember className="h-5 w-5" />, href: '/team' },
     { name: 'Resources', icon: <HardHat className="h-5 w-5" />, href: '/resources' },
