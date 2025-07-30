@@ -17,7 +17,7 @@ import {
   FileText,
   LogOut
 } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 interface UserProfile {
   _id: string;
@@ -60,7 +60,7 @@ export default function ProfilePage() {
     new: false,
     confirm: false
   });
-
+const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/profile';
 
@@ -294,8 +294,9 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.reload();
-    return <Navigate to="/signin" />;
+    navigate("/signin");
+    alert('You have been logged out successfully.');
+    window.location.reload(); // Reload to clear state
   };
 
   if (loading) {
