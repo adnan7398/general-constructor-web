@@ -101,8 +101,6 @@ const App: React.FC = () => {
                 disabled={isLoading}
               />
             </div>
-
-            {/* Password Field */}
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-medium text-blue-100">
                 Password
