@@ -11,7 +11,8 @@ import {
   Settings, 
   Group as TeamMember,
   User,
-  X
+  X,
+  Mail
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { name: 'Budgets', icon: <DollarSign className="h-5 w-5" />, href: '/budgets' },
     { name: 'Team Members', icon: <TeamMember className="h-5 w-5" />, href: '/team' },
     { name: 'Resources', icon: <HardHat className="h-5 w-5" />, href: '/resources' },
+    { name: 'Quotes', icon: <Mail className="h-5 w-5" />, href: '/quotes' },
     { name: 'Reports', icon: <BarChart className="h-5 w-5" />, href: '/reports' },
     { name: 'Profile', icon: <User className="h-5 w-5" />, href: '/profile' },
     { name: 'Settings', icon: <Settings className="h-5 w-5" />, href: '/settings' },

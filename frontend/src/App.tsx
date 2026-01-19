@@ -18,6 +18,7 @@ import Resources from './adminpages/pages/resources';
 import Account from './adminpages/pages/totalacount';
 import ProfilePage from './adminpages/pages/profile';
 import SettingsPage from './adminpages/pages/settings';
+import QuotesPage from './adminpages/pages/quotes';
 import Layout from './adminpages/layout';
 
 function App() {
@@ -57,6 +58,11 @@ function App() {
           <Route path="/resources" element={
             <Layout>
               <Resources />
+            </Layout>
+          } />
+          <Route path="/quotes" element={
+            <Layout>
+              <QuotesPage />
             </Layout>
           } />
           <Route path="/team" element={

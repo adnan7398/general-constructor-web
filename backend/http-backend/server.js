@@ -11,11 +11,14 @@ import accountRoutes from "./routes/account.js"; // Assuming you have a route fo
 import resourcesrouter from './routes/resources.js';
 import profileRoutes from './routes/profile.js';
 import settingsRoutes from './routes/settings.js';
+import quotesRoutes from './routes/quotes.js';
 
 const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
   "https://general-constructor-web-hu2p.vercel.app",
   "https://general-constructor-web.vercel.app"
 ];
@@ -36,7 +39,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -50,6 +53,7 @@ app.use("/account",accountRoutes);
 app.use('/resources', resourcesrouter);
 app.use('/profile', profileRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/quotes', quotesRoutes);
 
 const PORT = process.env.PORT || 3000;
 console.log(`MongoDB URL : ${process.env.MONGO_URL}`);

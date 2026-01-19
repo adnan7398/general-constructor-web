@@ -18,6 +18,30 @@ export interface Project {
 }
 const token = localStorage.getItem('token');
 const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/project';
+
+export const getAllProjects = async (): Promise<Project[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/all`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all projects:', error);
+    // Return combined data from pending and completed if all endpoint fails
+    try {
+      const [pending, completed] = await Promise.all([
+        getPendingProjects(),
+        getCompletedProjects()
+      ]);
+      return [...pending, ...completed];
+    } catch (fallbackError) {
+      console.error('Error fetching projects fallback:', fallbackError);
+      return [];
+    }
+  }
+};
 export const getPendingProjects = async (): Promise<Project[]> => {
   const response = await axios.get(`${API_BASE_URL}/pending`,{
     headers: {

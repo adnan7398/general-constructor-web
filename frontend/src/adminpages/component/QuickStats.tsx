@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppearance } from '../../contexts/AppearanceContext';
-import { Building, Users, Clock, CreditCard } from 'lucide-react';
+import { Building, Users, Clock, CreditCard, HardHat, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { getAllProjects } from '../../api/projects';
+import { getAllResources } from '../../api/resources';
+import { getAllTeamMembers } from '../../api/teammember';
 
 interface StatCardProps {
   title: string;
@@ -42,11 +45,56 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change }) => {
 };
 
 const QuickStats: React.FC = () => {
-  const stats = [
+  const [stats, setStats] = useState({
+    totalProjects: 0,
+    activeProjects: 0,
+    totalTeamMembers: 0,
+    totalResources: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [projects, teamMembers, resources] = await Promise.all([
+          getAllProjects().catch(() => []),
+          getAllTeamMembers().catch(() => []),
+          getAllResources().catch(() => [])
+        ]);
+
+        const activeProjects = projects.filter(p => p.status === 'ongoing').length;
+        const completedProjects = projects.filter(p => p.status === 'completed').length;
+
+        setStats({
+          totalProjects: projects.length,
+          activeProjects,
+          totalTeamMembers: teamMembers.length,
+          totalResources: resources.length,
+          loading: false
+        });
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        setStats(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  const statsData = [
     {
-      title: 'Active Sites',
-      value: 12,
-      icon: <Building className="h-6 w-6 text-blue-600" />,
+      title: 'Total Projects',
+      value: stats.loading ? '...' : stats.totalProjects,
+      icon: <Building className="h-6 w-6 text-orange-600" />,
+      change: {
+        value: 12,
+        isPositive: true,
+      },
+    },
+    {
+      title: 'Active Projects',
+      value: stats.loading ? '...' : stats.activeProjects,
+      icon: <HardHat className="h-6 w-6 text-blue-600" />,
       change: {
         value: 8,
         isPositive: true,
@@ -54,28 +102,19 @@ const QuickStats: React.FC = () => {
     },
     {
       title: 'Team Members',
-      value: 48,
-      icon: <Users className="h-6 w-6 text-blue-600" />,
+      value: stats.loading ? '...' : stats.totalTeamMembers,
+      icon: <Users className="h-6 w-6 text-green-600" />,
       change: {
-        value: 2,
+        value: 5,
         isPositive: true,
       },
     },
     {
-      title: 'Delays',
-      value: 3,
-      icon: <Clock className="h-6 w-6 text-blue-600" />,
+      title: 'Resources',
+      value: stats.loading ? '...' : stats.totalResources,
+      icon: <CreditCard className="h-6 w-6 text-purple-600" />,
       change: {
-        value: 5,
-        isPositive: false,
-      },
-    },
-    {
-      title: 'Monthly Expenses',
-      value: '$1.2M',
-      icon: <CreditCard className="h-6 w-6 text-blue-600" />,
-      change: {
-        value: 12,
+        value: 15,
         isPositive: true,
       },
     },
@@ -83,7 +122,7 @@ const QuickStats: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat, index) => (
+      {statsData.map((stat, index) => (
         <StatCard
           key={index}
           title={stat.title}

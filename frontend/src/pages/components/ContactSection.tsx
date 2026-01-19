@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { submitQuote } from '../../api/quotes';
 
 const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const ContactSection: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -21,26 +23,33 @@ const ContactSection: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        service: '',
-        message: '',
+    setSubmitError('');
+    try {
+      await submitQuote({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        service: formData.service || undefined,
+        message: formData.message,
       });
-      
-      setTimeout(() => {
-        setSubmitSuccess(false);
-      }, 5000);
-    }, 1500);
+      setSubmitSuccess(true);
+      setFormData({ name: '', email: '', phone: '', service: '', message: '' });
+      setTimeout(() => setSubmitSuccess(false), 5000);
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
+      let msg = 'Failed to send. Please try again.';
+      if (e?.response) {
+        msg = e.response.data?.error || (e.response.status === 404 ? 'Service unavailable. Ensure the backend is deployed with /quotes.' : `Error ${e.response.status}. Please try again.`);
+      } else if (e?.message?.toLowerCase().includes('network') || e?.message?.toLowerCase().includes('cors')) {
+        msg = 'Cannot reach the server. Check your connection and that the backend is running.';
+      }
+      setSubmitError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -48,11 +57,11 @@ const ContactSection: React.FC = () => {
       <div className="container">
         <div className="text-center mb-16">
           <h2 className="font-bold text-primary-500 relative inline-block">
-            Contact Us
+            Get a Free Quote
             <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-secondary-500"></span>
           </h2>
           <p className="mt-8 text-lg text-accent-600 max-w-3xl mx-auto">
-            Have a project in mind or a question about our services? We'd love to hear from you.
+            Share your project details below and we’ll get back to you with a custom quote. Questions? We’d love to hear from you.
           </p>
         </div>
 
@@ -115,11 +124,16 @@ const ContactSection: React.FC = () => {
           {/* Contact Form */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-lg p-8">
-              <h3 className="text-2xl font-bold text-primary-600 mb-6">Send Us a Message</h3>
+              <h3 className="text-2xl font-bold text-primary-600 mb-6">Request Your Free Quote</h3>
               
               {submitSuccess ? (
                 <div className="bg-success-500/10 text-success-500 p-4 rounded-lg mb-6">
-                  <p className="font-medium">Thank you for your message! We'll get back to you shortly.</p>
+                  <p className="font-medium">Thank you! We’ll get back to you with a free quote shortly.</p>
+                </div>
+              ) : null}
+              {submitError ? (
+                <div className="bg-red-500/10 text-red-600 p-4 rounded-lg mb-6">
+                  <p className="font-medium">{submitError}</p>
                 </div>
               ) : null}
               
@@ -215,7 +229,7 @@ const ContactSection: React.FC = () => {
                     </span>
                   ) : (
                     <span className="flex items-center">
-                      Send Message
+                      Request Free Quote
                       <Send className="w-5 h-5 ml-2" />
                     </span>
                   )}
