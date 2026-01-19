@@ -73,27 +73,21 @@ const RecentActivity: React.FC = () => {
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'update':
-        return 'bg-blue-100';
-      case 'create':
-        return 'bg-green-100';
-      case 'delay':
-        return 'bg-amber-100';
-      case 'complete':
-        return 'bg-green-100';
-      case 'issue':
-        return 'bg-red-100';
-      default:
-        return 'bg-gray-100';
+      case 'update': return 'bg-blue-500/20';
+      case 'create': return 'bg-emerald-500/20';
+      case 'delay': return 'bg-amber-500/20';
+      case 'complete': return 'bg-emerald-500/20';
+      case 'issue': return 'bg-red-500/20';
+      default: return 'bg-slate-600';
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-100">
+    <div className="bg-slate-800 rounded-xl border border-slate-700">
+      <div className="px-4 py-5 sm:px-6 border-b border-slate-700">
         <div className="flex items-center">
-          <Activity className="h-5 w-5 text-blue-600 mr-2" />
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
+          <Activity className="h-5 w-5 text-primary-400 mr-2" />
+          <h3 className="text-lg leading-6 font-medium text-slate-100">Recent Activity</h3>
         </div>
       </div>
       <div className="px-4 py-5 sm:p-6">
@@ -102,26 +96,13 @@ const RecentActivity: React.FC = () => {
             {activities.map((activity, activityIdx) => (
               <li key={activity.id}>
                 <div className="relative pb-8">
-                  {activityIdx !== activities.length - 1 ? (
-                    <span
-                      className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-gray-200"
-                      aria-hidden="true"
-                    ></span>
-                  ) : null}
+                  {activityIdx !== activities.length - 1 && <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-slate-600" aria-hidden="true" />}
                   <div className="relative flex items-start space-x-3">
-                    <div className={`relative p-1 rounded-full ${getActivityColor(activity.type)}`}>
-                      {getActivityIcon(activity.type)}
-                    </div>
+                    <div className={`relative p-1 rounded-full ${getActivityColor(activity.type)}`}>{getActivityIcon(activity.type)}</div>
                     <div className="min-w-0 flex-1">
-                      <div>
-                        <div className="text-sm">
-                          <span className="font-medium text-gray-900">{activity.user}</span>
-                        </div>
-                        <p className="mt-0.5 text-sm text-gray-500">
-                          {activity.description} on <span className="font-medium">{activity.project}</span>
-                        </p>
-                      </div>
-                      <div className="mt-2 text-xs text-gray-400">{activity.time}</div>
+                      <div className="text-sm"><span className="font-medium text-slate-100">{activity.user}</span></div>
+                      <p className="mt-0.5 text-sm text-slate-400">{activity.description} on <span className="font-medium text-slate-300">{activity.project}</span></p>
+                      <div className="mt-2 text-xs text-slate-500">{activity.time}</div>
                     </div>
                   </div>
                 </div>
@@ -130,10 +111,7 @@ const RecentActivity: React.FC = () => {
           </ul>
         </div>
         <div className="mt-4 text-center">
-          <button
-            type="button"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
+          <button type="button" className="inline-flex items-center px-4 py-2 border border-slate-600 text-sm font-medium rounded-lg text-slate-300 bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30">
             View all activity
           </button>
         </div>

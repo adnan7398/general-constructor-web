@@ -8,11 +8,11 @@ const projectSchema = new mongoose.Schema({
   description: String,
   image: {
     type: String,
-    default: "https://via.placeholder.com/300x200.png?text=Project+Image",
+    default: "https://placehold.co/300x200/1e293b/94a3b8?text=Project",
   },
   projectType: {
     type: String,
-    enum: ['commercial', 'industrial', 'residential', 'infrastructure'],
+    enum: ['commercial', 'industrial', 'residential', 'infrastructure', 'public'],
     default: 'commercial',
   },
   startDate: {
@@ -25,20 +25,25 @@ const projectSchema = new mongoose.Schema({
     type: Number,
     min: 0,
   },
-
   status: {
     type: String,
     enum: ['ongoing', 'completed', 'upcoming'],
     default: 'ongoing',
   },
-
-  
+  // Show this project on the public website
+  showOnWebsite: {
+    type: Boolean,
+    default: false,
+  },
+  // Display order on website (lower = first)
+  displayOrder: {
+    type: Number,
+    default: 0,
+  },
   team: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'TeamMember',
   }],
-
-  // Optional fields
   location: {
     type: String,
   },
@@ -48,7 +53,6 @@ const projectSchema = new mongoose.Schema({
   documents: [{
     type: String,
   }],
-
   createdAt: {
     type: Date,
     default: Date.now,

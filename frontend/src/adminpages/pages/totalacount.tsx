@@ -9,9 +9,11 @@ import {
   Building2,
   Filter,
   RefreshCw,
+  FileDown,
 } from 'lucide-react';
 import { SiteAccount, Entry, SiteSummary } from '../../api/account';
 import { useNavigate } from 'react-router-dom';
+import { exportTotalAccountToExcel, exportTotalAccountToPDF } from '../../utils/exportAccount';
 
 const Account: React.FC = () => {
     const navigate = useNavigate();
@@ -131,9 +133,9 @@ const Account: React.FC = () => {
   };
 
   const getBalanceColor = (balance: number) => {
-    if (balance > 0) return 'text-green-600';
-    if (balance < 0) return 'text-red-600';
-    return 'text-gray-600';
+    if (balance > 0) return 'text-emerald-400';
+    if (balance < 0) return 'text-red-400';
+    return 'text-slate-400';
   };
 
   const filteredEntries = (entries: Entry[]) => {
@@ -142,187 +144,161 @@ const Account: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileSpreadsheet className="h-8 w-8 text-blue-600" />
+              <div className="p-3 bg-primary-500/20 rounded-lg">
+                <FileSpreadsheet className="h-8 w-8 text-primary-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Site Account Management</h1>
-                <p className="text-gray-600">Comprehensive view of all site finances and transactions</p>
+                <h1 className="text-2xl font-bold text-slate-100">Site Account Management</h1>
+                <p className="text-slate-400">Comprehensive view of all site finances and transactions</p>
               </div>
             </div>
-            <button
-              onClick={refreshData}
-              disabled={loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
-            <button
-                onClick={handleClick}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 transition"
-                >
-                <Building2 className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-800">My Account</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={refreshData} disabled={loading} className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <button onClick={() => exportTotalAccountToExcel(siteAccounts, siteSummaries, grandTotals)} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-800 bg-emerald-900/30 text-emerald-300 hover:bg-emerald-900/50 text-sm font-medium">
+                <FileSpreadsheet className="h-4 w-4" /> Download Excel
+              </button>
+              <button onClick={() => exportTotalAccountToPDF(siteAccounts, siteSummaries, grandTotals)} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-800 bg-red-900/30 text-red-300 hover:bg-red-900/50 text-sm font-medium">
+                <FileDown className="h-4 w-4" /> Download PDF
+              </button>
+              <button onClick={handleClick} className="flex items-center gap-2 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg hover:bg-slate-600 text-slate-200">
+                <Building2 className="h-5 w-5 text-primary-400" />
+                <span className="text-sm font-medium">My Account</span>
+              </button>
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          {/* Total Sites */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Sites</p>
-                <p className="text-2xl font-bold text-gray-900">{siteAccounts.length}</p>
+                <p className="text-slate-400 text-sm font-medium">Total Sites</p>
+                <p className="text-2xl font-bold text-slate-100">{siteAccounts.length}</p>
               </div>
-              <Building2 className="h-8 w-8 text-blue-600" />
+              <Building2 className="h-8 w-8 text-primary-400" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Income</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(grandTotals.totalIncome)}</p>
+                <p className="text-slate-400 text-sm font-medium">Total Income</p>
+                <p className="text-2xl font-bold text-emerald-400">{formatCurrency(grandTotals.totalIncome)}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-emerald-400" />
             </div>
           </div>
-
-          {/* Total Expense */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(grandTotals.totalExpense)}</p>
+                <p className="text-slate-400 text-sm font-medium">Total Expenses</p>
+                <p className="text-2xl font-bold text-red-400">{formatCurrency(grandTotals.totalExpense)}</p>
               </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
+              <TrendingDown className="h-8 w-8 text-red-400" />
             </div>
           </div>
-
-          {/* Net Balance */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Net Balance</p>
-                <p className={`text-2xl font-bold ${getBalanceColor(grandTotals.netBalance)}`}>
-                  {formatCurrency(grandTotals.netBalance)}
-                </p>
+                <p className="text-slate-400 text-sm font-medium">Net Balance</p>
+                <p className={`text-2xl font-bold ${getBalanceColor(grandTotals.netBalance)}`}>{formatCurrency(grandTotals.netBalance)}</p>
               </div>
-              <Calculator className="h-8 w-8 text-gray-600" />
+              <Calculator className="h-8 w-8 text-slate-400" />
             </div>
           </div>
         </div>
 
         {/* Filter */}
-        <div className="bg-white border p-4 mb-6 rounded-lg">
+        <div className="bg-slate-800 border border-slate-700 p-4 mb-6 rounded-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-700">Filter:</span>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as 'ALL' | 'INCOME' | 'EXPENSE')}
-                className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-              >
+              <Filter className="h-4 w-4 text-slate-500" />
+              <span className="text-sm text-slate-300">Filter:</span>
+              <select value={filterType} onChange={(e) => setFilterType(e.target.value as 'ALL' | 'INCOME' | 'EXPENSE')} className="border border-slate-600 bg-slate-700/50 text-slate-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
                 <option value="ALL">All</option>
                 <option value="INCOME">Income</option>
                 <option value="EXPENSE">Expenses</option>
               </select>
             </div>
-            <span className="text-sm text-gray-500">Last updated: {formatDate(new Date())}</span>
+            <span className="text-sm text-slate-500">Last updated: {formatDate(new Date())}</span>
           </div>
         </div>
 
         {/* Sites Table */}
-        <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-700/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Site</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Opening</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Income</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Expenses</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Balance</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">Entries</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400">Site</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-400">Opening</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-400">Income</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-400">Expenses</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-400">Balance</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-slate-400">Entries</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-slate-400">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-700">
               {siteSummaries.map((site) => (
                 <React.Fragment key={site.siteId}>
-                  <tr className="hover:bg-gray-50">
+                  <tr className="hover:bg-slate-700/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <Building2 className="h-5 w-5 text-gray-400 mr-2" />
+                        <Building2 className="h-5 w-5 text-slate-500 mr-2" />
                         <div>
-                          <div className="text-sm font-medium">{site.siteName}</div>
-                          <div className="text-xs text-gray-500">Updated {formatDate(site.lastUpdated)}</div>
+                          <div className="text-sm font-medium text-slate-100">{site.siteName}</div>
+                          <div className="text-xs text-slate-500">Updated {formatDate(site.lastUpdated)}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">{formatCurrency(site.openingBalance)}</td>
-                    <td className="px-6 py-4 text-right text-green-600">{formatCurrency(site.totalIncome)}</td>
-                    <td className="px-6 py-4 text-right text-red-600">{formatCurrency(site.totalExpense)}</td>
-                    <td className={`px-6 py-4 text-right font-semibold ${getBalanceColor(site.closingBalance)}`}>
-                      {formatCurrency(site.closingBalance)}
-                    </td>
-                    <td className="px-6 py-4 text-center">{site.totalEntries}</td>
+                    <td className="px-6 py-4 text-right text-slate-300">{formatCurrency(site.openingBalance)}</td>
+                    <td className="px-6 py-4 text-right text-emerald-400">{formatCurrency(site.totalIncome)}</td>
+                    <td className="px-6 py-4 text-right text-red-400">{formatCurrency(site.totalExpense)}</td>
+                    <td className={`px-6 py-4 text-right font-semibold ${getBalanceColor(site.closingBalance)}`}>{formatCurrency(site.closingBalance)}</td>
+                    <td className="px-6 py-4 text-center text-slate-300">{site.totalEntries}</td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => toggleSiteExpansion(site.siteId)}
-                        className="px-3 py-1 border rounded text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        {expandedSites.has(site.siteId) ? (
-                          <><EyeOff className="h-4 w-4 inline mr-1" />Hide</>
-                        ) : (
-                          <><Eye className="h-4 w-4 inline mr-1" />View</>
-                        )}
+                      <button onClick={() => toggleSiteExpansion(site.siteId)} className="px-3 py-1.5 border border-slate-600 rounded-lg text-sm text-slate-300 hover:bg-slate-700">
+                        {expandedSites.has(site.siteId) ? <><EyeOff className="h-4 w-4 inline mr-1" />Hide</> : <><Eye className="h-4 w-4 inline mr-1" />View</>}
                       </button>
                     </td>
                   </tr>
-
-                  {/* Expanded entries */}
                   {expandedSites.has(site.siteId) && (
                     <tr>
-                      <td colSpan={7} className="bg-gray-50 px-6 py-4">
+                      <td colSpan={7} className="bg-slate-700/20 px-6 py-4">
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
                               <tr>
-                                <th className="py-2 text-left text-gray-600">Date</th>
-                                <th className="py-2 text-left text-gray-600">Type</th>
-                                <th className="py-2 text-left text-gray-600">Category</th>
-                                <th className="py-2 text-left text-gray-600">Particular</th>
-                                <th className="py-2 text-right text-gray-600">Quantity</th>
-                                <th className="py-2 text-right text-gray-600">Amount</th>
-                                <th className="py-2 text-left text-gray-600">Payment</th>
+                                <th className="py-2 text-left text-slate-500">Date</th>
+                                <th className="py-2 text-left text-slate-500">Type</th>
+                                <th className="py-2 text-left text-slate-500">Category</th>
+                                <th className="py-2 text-left text-slate-500">Particular</th>
+                                <th className="py-2 text-right text-slate-500">Quantity</th>
+                                <th className="py-2 text-right text-slate-500">Amount</th>
+                                <th className="py-2 text-left text-slate-500">Payment</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {filteredEntries(siteAccounts.find(s => s._id === site.siteId)?.entries || [])
-                                .map(entry => (
-                                  <tr key={entry._id} className="border-t">
-                                    <td className="py-2">{formatDate(entry.date)}</td>
-                                    <td className="py-2">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                        entry.type === 'INCOME' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                      }`}>
-                                        {entry.type}
-                                      </span>
-                                    </td>
-                                    <td className="py-2">{entry.typeofExpense|| '-'}</td>
-                                    <td className="py-2">{entry.particular || '-'}</td>
-                                    <td className="py-2 text-right">{entry.Quantity}</td>
-                                    <td className="py-2 text-right">{formatCurrency(entry.amount)}</td>
-                                    <td className="py-2">{entry.paymentMode || '-'}</td>
-                                  </tr>
-                                ))}
+                              {filteredEntries(siteAccounts.find(s => s._id === site.siteId)?.entries || []).map(entry => (
+                                <tr key={entry._id} className="border-t border-slate-600">
+                                  <td className="py-2 text-slate-300">{formatDate(entry.date)}</td>
+                                  <td className="py-2">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${entry.type === 'INCOME' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>{entry.type}</span>
+                                  </td>
+                                  <td className="py-2 text-slate-300">{entry.typeofExpense|| '-'}</td>
+                                  <td className="py-2 text-slate-300">{entry.particular || '-'}</td>
+                                  <td className="py-2 text-right text-slate-300">{entry.Quantity}</td>
+                                  <td className="py-2 text-right text-slate-300">{formatCurrency(entry.amount)}</td>
+                                  <td className="py-2 text-slate-300">{entry.paymentMode || '-'}</td>
+                                </tr>
+                              ))}
                             </tbody>
                           </table>
                         </div>

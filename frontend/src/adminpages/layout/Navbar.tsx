@@ -1,163 +1,161 @@
-import React, { useState } from 'react';
-import { useAppearance } from '../../contexts/AppearanceContext';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Bell, Settings, User, LogOut, Search, Menu, Sun, Moon } from 'lucide-react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 
 interface NavbarProps {
   toggleSidebar: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
-  const { settings: appearanceSettings } = useAppearance();
+  const navigate = useNavigate();
+  const { settings, updateSettings } = useAppearance();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        (profileRef.current && !profileRef.current.contains(e.target as Node)) &&
+        (notifRef.current && !notifRef.current.contains(e.target as Node))
+      ) {
+        setShowProfileMenu(false);
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = settings.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(next);
+    updateSettings({ theme: next });
+  };
+
+  const handleSignOut = () => {
+    setShowProfileMenu(false);
+    localStorage.removeItem('token');
+    navigate('/signin');
+  };
 
   return (
-    <header className="border-b border-gray-200 z-30">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <button
-              type="button"
-              className="text-gray-500 hover:text-blue-600 lg:hidden"
-              onClick={toggleSidebar}
-              aria-label="Open sidebar"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="ml-4 flex lg:ml-0">
-              <div className="flex items-center">
-                <span className="font-bold text-xl text-blue-600"></span>
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden md:block">
+    <header className="h-14 flex-shrink-0 bg-slate-900 border-b border-slate-800">
+      <div className="h-full px-4 sm:px-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="lg:hidden p-2 -ml-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="hidden sm:block w-56 max-w-[40vw]">
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Search..."
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
               />
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Theme Toggle */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+            aria-label="Toggle theme"
+          >
+            {settings.theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+
+          <div className="relative" ref={notifRef}>
             <button
               type="button"
-              className="relative p-1 text-gray-500 hover:text-blue-600 focus:outline-none"
-              onClick={() => {
-                const newTheme = appearanceSettings.theme === 'dark' ? 'light' : 'dark';
-                // This will trigger the appearance context update
-                document.documentElement.classList.remove('light', 'dark');
-                document.documentElement.classList.add(newTheme);
-              }}
+              onClick={() => { setShowNotifications(!showNotifications); setShowProfileMenu(false); }}
+              className="relative p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+              aria-label="Notifications"
             >
-              {appearanceSettings.theme === 'dark' ? (
-                <Sun className="h-6 w-6" />
-              ) : (
-                <Moon className="h-6 w-6" />
-              )}
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500" />
             </button>
-
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                type="button"
-                className="relative p-1 text-gray-500 hover:text-blue-600 focus:outline-none"
-                onClick={() => setShowNotifications(!showNotifications)}
-              >
-                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-                <Bell className="h-6 w-6" />
-              </button>
-
-              {showNotifications && (
-                <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                  <div className="py-1">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-700">Notifications</p>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto">
-                      {[1, 2, 3].map((item) => (
-                        <a
-                          key={item}
-                          href="#"
-                          className="block px-4 py-3 hover:bg-gray-50 transition ease-in-out duration-150"
-                        >
-                          <div className="flex items-start">
-                            <div className="flex-shrink-0 bg-blue-100 rounded-md p-2">
-                              <Bell className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div className="ml-3 w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900">New task assigned</p>
-                              <p className="mt-1 text-sm text-gray-500">
-                                You have been assigned to the project "Office Tower".
-                              </p>
-                              <p className="mt-1 text-xs text-gray-400">10 minutes ago</p>
-                            </div>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                    <div className="border-t border-gray-200 px-4 py-2">
-                      <a href="#" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                        View all notifications
-                      </a>
-                    </div>
-                  </div>
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-700 bg-slate-800 shadow-xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-700">
+                  <p className="text-sm font-semibold text-slate-100">Notifications</p>
                 </div>
-              )}
-            </div>
-
-            {/* Profile dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                className="flex items-center max-w-xs text-sm rounded-full focus:outline-none"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                  <User className="h-5 w-5" />
+                <div className="max-h-64 overflow-y-auto">
+                  {[1, 2, 3].map((i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="w-full text-left px-4 py-3 hover:bg-slate-700/50 border-b border-slate-700/50 last:border-0"
+                    >
+                      <p className="text-sm font-medium text-slate-200">New task assigned</p>
+                      <p className="text-xs text-slate-400 mt-0.5">You were assigned to &quot;Office Tower&quot;.</p>
+                      <p className="text-xs text-slate-500 mt-1">10m ago</p>
+                    </button>
+                  ))}
                 </div>
-              </button>
-
-              {showProfileMenu && (
-                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                  <div className="py-1">
-                    <a
-                      href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <div className="flex items-center">
-                        <User className="mr-3 h-4 w-4" />
-                        <span>Your Profile</span>
-                      </div>
-                    </a>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <div className="flex items-center">
-                        <Settings className="mr-3 h-4 w-4" />
-                        <span>Settings</span>
-                      </div>
-                    </a>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <div className="flex items-center">
-                        <LogOut className="mr-3 h-4 w-4" />
-                        <span>Sign out</span>
-                      </div>
-                    </a>
-                  </div>
+                <div className="px-4 py-2 border-t border-slate-700">
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setShowNotifications(false)}
+                    className="text-sm font-medium text-primary-400 hover:text-primary-300"
+                  >
+                    View all
+                  </Link>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative" ref={profileRef}>
+            <button
+              type="button"
+              onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); }}
+              className="flex items-center p-1.5 rounded-lg hover:bg-slate-800"
+            >
+              <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                <User className="h-4 w-4" />
+              </div>
+            </button>
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-700 bg-slate-800 shadow-xl z-50 py-1">
+                <Link
+                  to="/profile"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50"
+                >
+                  <User className="h-4 w-4 text-slate-500" />
+                  Profile
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setShowProfileMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50"
+                >
+                  <Settings className="h-4 w-4 text-slate-500" />
+                  Settings
+                </Link>
+                <div className="my-1 border-t border-slate-700" />
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 text-left"
+                >
+                  <LogOut className="h-4 w-4 text-slate-500" />
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

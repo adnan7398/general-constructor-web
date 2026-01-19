@@ -53,31 +53,23 @@ const Notifications: React.FC = () => {
 
   const getBgColor = (type: string) => {
     switch (type) {
-      case 'alert':
-        return 'bg-red-50 border-red-100';
-      case 'warning':
-        return 'bg-amber-50 border-amber-100';
-      case 'info':
-        return 'bg-blue-50 border-blue-100';
-      case 'success':
-        return 'bg-green-50 border-green-100';
-      default:
-        return 'bg-gray-50 border-gray-100';
+      case 'alert': return 'bg-red-900/30 border-red-800/50';
+      case 'warning': return 'bg-amber-900/30 border-amber-800/50';
+      case 'info': return 'bg-blue-900/30 border-blue-800/50';
+      case 'success': return 'bg-emerald-900/30 border-emerald-800/50';
+      default: return 'bg-slate-700/50 border-slate-600';
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-100">
+    <div className="bg-slate-800 rounded-xl border border-slate-700">
+      <div className="px-4 py-5 sm:px-6 border-b border-slate-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Bell className="h-5 w-5 text-blue-600 mr-2" />
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Alerts & Notifications</h3>
+            <Bell className="h-5 w-5 text-primary-400 mr-2" />
+            <h3 className="text-lg leading-6 font-medium text-slate-100">Alerts & Notifications</h3>
           </div>
-          <button
-            type="button"
-            className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
+          <button type="button" className="inline-flex items-center px-2.5 py-1.5 border border-slate-600 text-xs font-medium rounded-lg text-slate-300 bg-slate-700 hover:bg-slate-600">
             Mark all as read
           </button>
         </div>
@@ -85,31 +77,16 @@ const Notifications: React.FC = () => {
       <div className="px-4 py-5 sm:p-6">
         <div className="space-y-3">
           {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`p-3 rounded-lg border ${getBgColor(notification.type)} flex items-start`}
-            >
-              <div className="flex-shrink-0 mr-3">
-                {getIcon(notification.type)}
-              </div>
+            <div key={notification.id} className={`p-3 rounded-lg border ${getBgColor(notification.type)} flex items-start`}>
+              <div className="flex-shrink-0 mr-3">{getIcon(notification.type)}</div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-700">{notification.message}</p>
-                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                <p className="text-sm text-slate-200">{notification.message}</p>
+                <p className="text-xs text-slate-500 mt-1">{notification.time}</p>
               </div>
-              <button className="ml-2 flex-shrink-0 h-5 w-5 text-gray-400 hover:text-gray-500">
+              <button className="ml-2 flex-shrink-0 h-5 w-5 text-slate-500 hover:text-slate-400">
                 <span className="sr-only">Dismiss</span>
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>

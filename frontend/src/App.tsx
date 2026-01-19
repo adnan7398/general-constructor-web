@@ -19,6 +19,7 @@ import Account from './adminpages/pages/totalacount';
 import ProfilePage from './adminpages/pages/profile';
 import SettingsPage from './adminpages/pages/settings';
 import QuotesPage from './adminpages/pages/quotes';
+import ReportsPage from './adminpages/pages/reports';
 import Layout from './adminpages/layout';
 
 function App() {
@@ -88,6 +89,11 @@ function App() {
         <Route path="/settings" element={
           <Layout>
             <SettingsPage />
+          </Layout>
+        } />
+        <Route path="/reports" element={
+          <Layout>
+            <ReportsPage />
           </Layout>
         } />
         </Routes>

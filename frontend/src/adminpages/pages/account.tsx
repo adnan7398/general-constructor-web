@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAppearance } from '../../contexts/AppearanceContext';
-import { Building2, TrendingUp, TrendingDown, Plus, X, Calendar, Receipt, User, CreditCard } from 'lucide-react';
-import {useNavigate } from 'react-router-dom';
+import { Building2, TrendingUp, TrendingDown, Plus, X, Calendar, Receipt, User, CreditCard, FileSpreadsheet, FileDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { exportBudgetToExcel, exportBudgetToPDF } from '../../utils/exportAccount';
 interface AccountEntry {
   _id?: string;
   siteName?: string;
@@ -257,32 +258,30 @@ const expense = filteredEntries
   const currentMonthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-slate-900">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Header Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-8">
           <div className="flex flex-col items-center space-y-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+              <div className="p-3 bg-primary-600 rounded-xl">
                 <Building2 className="w-8 h-8 text-white" />
               </div>
               <div className="text-center">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  Site Ledger Overview
-                </h1>
-                <p className="text-slate-600 mt-1">{currentMonthYear}</p>
+                <h1 className="text-3xl font-bold text-slate-100">Site Ledger Overview</h1>
+                <p className="text-slate-400 mt-1">{currentMonthYear}</p>
               </div>
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-2xl">
               <div className="flex items-center gap-3 flex-1">
-                <label className="text-sm font-semibold text-slate-700 whitespace-nowrap">
+                <label className="text-sm font-semibold text-slate-300 whitespace-nowrap">
                   Current Site:
                 </label>
                 <select
                   value={siteName}
                   onChange={(e) => setSiteName(e.target.value)}
-                  className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm bg-white/50 backdrop-blur-sm focus:border-blue-500 focus:outline-none transition-all duration-200 hover:border-slate-300"
+                  className="flex-1 border border-slate-600 rounded-xl px-4 py-3 text-sm bg-slate-700/50 text-slate-200 focus:border-primary-500 focus:outline-none"
                 >
                   <option value="">Select a Site</option>
                   {availableSites.map((site) => (
@@ -293,32 +292,29 @@ const expense = filteredEntries
               
               <button
                 onClick={() => setShowAddSite(!showAddSite)}
-                className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-all duration-200 whitespace-nowrap border border-blue-200"
+                className="text-sm font-medium text-primary-400 hover:text-primary-300 bg-primary-500/20 hover:bg-primary-500/30 px-4 py-2 rounded-xl whitespace-nowrap border border-slate-600"
               >
                 + Add New Site
               </button>
               <button
                   onClick={handleClick}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 transition"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg hover:bg-slate-600 text-slate-200"
                 >
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-800">Total Account</span>
+                  <Building2 className="h-5 w-5 text-primary-400" />
+                  <span className="text-sm font-medium">Total Account</span>
               </button>
             </div>
             
             {showAddSite && (
-              <div className="flex gap-3 w-full max-w-md animate-fade-in">
+              <div className="flex gap-3 w-full max-w-md">
                 <input
                   type="text"
                   value={newSite}
                   onChange={(e) => setNewSite(e.target.value)}
-                  className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2 text-sm bg-white/50 backdrop-blur-sm focus:border-blue-500 focus:outline-none transition-all duration-200"
+                  className="flex-1 border border-slate-600 rounded-xl px-4 py-2 text-sm bg-slate-700/50 text-slate-200 placeholder-slate-500 focus:border-primary-500 focus:outline-none"
                   placeholder="Enter site name"
                 />
-                <button 
-                  onClick={addSite} 
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
+                <button onClick={addSite} className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-xl text-sm font-medium">
                   Add
                 </button>
               </div>
@@ -328,208 +324,137 @@ const expense = filteredEntries
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-emerald-50 to-green-100 border border-emerald-200 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-emerald-500 rounded-xl">
-                <TrendingUp className="w-5 h-5 text-white" />
+              <div className="p-2 bg-emerald-500/20 rounded-xl">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
               </div>
-              <span className="font-semibold text-emerald-800">Opening Balance</span>
+              <span className="font-semibold text-slate-300">Opening Balance</span>
             </div>
-            <div className="text-3xl font-bold text-emerald-700">₹{income.toLocaleString('en-IN')}</div>
-            <div className="text-sm text-emerald-600 mt-1">Total Income</div>
+            <div className="text-3xl font-bold text-emerald-400">₹{income.toLocaleString('en-IN')}</div>
+            <div className="text-sm text-slate-500 mt-1">Total Income</div>
           </div>
-          
-          <div className="bg-gradient-to-br from-red-50 to-rose-100 border border-red-200 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-500 rounded-xl">
-                <TrendingDown className="w-5 h-5 text-white" />
+              <div className="p-2 bg-red-500/20 rounded-xl">
+                <TrendingDown className="w-5 h-5 text-red-400" />
               </div>
-              <span className="font-semibold text-red-800">Total Expenditure</span>
+              <span className="font-semibold text-slate-300">Total Expenditure</span>
             </div>
-            <div className="text-3xl font-bold text-red-700">₹{expense.toLocaleString('en-IN')}</div>
-            <div className="text-sm text-red-600 mt-1">Total Expenses</div>
+            <div className="text-3xl font-bold text-red-400">₹{expense.toLocaleString('en-IN')}</div>
+            <div className="text-sm text-slate-500 mt-1">Total Expenses</div>
           </div>
-          
-          <div className={`bg-gradient-to-br ${closingBalance >= 0 ? 'from-blue-50 to-indigo-100 border-blue-200' : 'from-orange-50 to-red-100 border-orange-200'} border p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300`}>
+          <div className={`bg-slate-800 border border-slate-700 p-6 rounded-xl`}>
             <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 ${closingBalance >= 0 ? 'bg-blue-500' : 'bg-orange-500'} rounded-xl`}>
-                <Building2 className="w-5 h-5 text-white" />
+              <div className={`p-2 rounded-xl ${closingBalance >= 0 ? 'bg-blue-500/20' : 'bg-amber-500/20'}`}>
+                <Building2 className={`w-5 h-5 ${closingBalance >= 0 ? 'text-blue-400' : 'text-amber-400'}`} />
               </div>
-              <span className={`font-semibold ${closingBalance >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
-                Closing Balance
-              </span>
+              <span className="font-semibold text-slate-300">Closing Balance</span>
             </div>
-            <div className={`text-3xl font-bold ${closingBalance >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+            <div className={`text-3xl font-bold ${closingBalance >= 0 ? 'text-blue-400' : 'text-amber-400'}`}>
               ₹{Math.abs(closingBalance).toLocaleString('en-IN')}
             </div>
             <div className="text-sm mt-1">
-              {closingBalance >= 0 ? 
-                <span className="text-blue-600 font-medium">💰 Surplus</span> : 
-                <span className="text-orange-600 font-medium">⚠️ Deficit</span>
-              }
+              {closingBalance >= 0 ? <span className="text-emerald-400 font-medium">Surplus</span> : <span className="text-amber-400 font-medium">Deficit</span>}
             </div>
           </div>
         </div>
 
         {/* Entries Table */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-          <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+          <div className="p-6 border-b border-slate-700 flex flex-wrap justify-between items-center gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Ledger Entries</h2>
-              <p className="text-slate-600 text-sm mt-1">Track all income and expenses</p>
+              <h2 className="text-2xl font-bold text-slate-100">Ledger Entries</h2>
+              <p className="text-slate-400 text-sm mt-1">Track all income and expenses</p>
             </div>
-            <button
-              onClick={() => {
-                setShowModal(true);
-                setIsEditing(false);
-                setEditingEntryId('');
-                setNewEntry({});
-              }}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              <Plus className="w-5 h-5" /> 
-              Add Entry
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => exportBudgetToExcel(filteredEntries, siteName, income, expense, closingBalance)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-800 bg-emerald-900/30 text-emerald-300 hover:bg-emerald-900/50 text-sm font-medium">
+                <FileSpreadsheet className="w-4 h-4" /> Download Excel
+              </button>
+              <button onClick={() => exportBudgetToPDF(filteredEntries, siteName, income, expense, closingBalance)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-800 bg-red-900/30 text-red-300 hover:bg-red-900/50 text-sm font-medium">
+                <FileDown className="w-4 h-4" /> Download PDF
+              </button>
+              <button onClick={() => { setShowModal(true); setIsEditing(false); setEditingEntryId(''); setNewEntry({}); }} className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-medium">
+                <Plus className="w-5 h-5" /> Add Entry
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
-          <div className="bg-white/90 p-4 rounded-xl mb-6 flex flex-wrap gap-4 items-center">
-                <input
-                  type="text"
-                  placeholder="Filter by particular"
-                  value={filters.particular}
-                  onChange={e => setFilters({ ...filters, particular: e.target.value })}
-                  className="border px-3 py-2 rounded-lg text-sm w-48"
-                />
-                <input
-                  type="text"
-                  placeholder="Filter by category"
-                  value={filters.category}
-                  onChange={e => setFilters({ ...filters, category: e.target.value })}
-                  className="border px-3 py-2 rounded-lg text-sm w-48"
-                />
-                <input
-                  type="number"
-                  placeholder="Min Amount"
-                  onChange={e => setFilters({ ...filters, minAmount: Number(e.target.value) || 0 })}
-                  className="border px-3 py-2 rounded-lg text-sm w-32"
-                />
-                <input
-                  type="number"
-                  placeholder="Max Amount"
-                  onChange={e => setFilters({ ...filters, maxAmount: Number(e.target.value) || Infinity })}
-                  className="border px-3 py-2 rounded-lg text-sm w-32"
-                />
-                <input
-                  type="number"
-                  placeholder="Min Quantity"
-                  onChange={e => setFilters({ ...filters, minQuantity: Number(e.target.value) || 0 })}
-                  className="border px-3 py-2 rounded-lg text-sm w-32"
-                />
-                <select
-                  onChange={e => setFilters({ ...filters, type: e.target.value as 'INCOME' | 'EXPENSE' | '' })}
-                  className="border px-3 py-2 rounded-lg text-sm w-36"
-                >
+          <div className="bg-slate-700/30 p-4 flex flex-wrap gap-4 items-center border-b border-slate-700">
+                <input type="text" placeholder="Filter by particular" value={filters.particular} onChange={e => setFilters({ ...filters, particular: e.target.value })} className="border border-slate-600 bg-slate-700/50 text-slate-200 placeholder-slate-500 px-3 py-2 rounded-lg text-sm w-48 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                <input type="text" placeholder="Filter by category" value={filters.category} onChange={e => setFilters({ ...filters, category: e.target.value })} className="border border-slate-600 bg-slate-700/50 text-slate-200 placeholder-slate-500 px-3 py-2 rounded-lg text-sm w-48 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                <input type="number" placeholder="Min Amount" onChange={e => setFilters({ ...filters, minAmount: Number(e.target.value) || 0 })} className="border border-slate-600 bg-slate-700/50 text-slate-200 placeholder-slate-500 px-3 py-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                <input type="number" placeholder="Max Amount" onChange={e => setFilters({ ...filters, maxAmount: Number(e.target.value) || Infinity })} className="border border-slate-600 bg-slate-700/50 text-slate-200 placeholder-slate-500 px-3 py-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                <input type="number" placeholder="Min Quantity" onChange={e => setFilters({ ...filters, minQuantity: Number(e.target.value) || 0 })} className="border border-slate-600 bg-slate-700/50 text-slate-200 placeholder-slate-500 px-3 py-2 rounded-lg text-sm w-32 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                <select onChange={e => setFilters({ ...filters, type: e.target.value as 'INCOME' | 'EXPENSE' | '' })} className="border border-slate-600 bg-slate-700/50 text-slate-200 px-3 py-2 rounded-lg text-sm w-36 focus:outline-none focus:ring-1 focus:ring-primary-500">
                   <option value="">All Types</option>
                   <option value="INCOME">Income</option>
                   <option value="EXPENSE">Expense</option>
                 </select>
-                <button
-                  onClick={() => setFilters({ particular: '', category: '', minAmount: 0, maxAmount: Infinity, type: '', minQuantity: 0 })}
-                  className="text-sm text-blue-600 underline"
-                >
+                <button onClick={() => setFilters({ particular: '', category: '', minAmount: 0, maxAmount: Infinity, type: '', minQuantity: 0 })} className="text-sm text-primary-400 hover:text-primary-300">
                   Clear Filters
                 </button>
               </div>
 
             <table className="w-full">
-              <thead className="bg-slate-50">
+              <thead className="bg-slate-700/50">
                 <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Date</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Particular</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Category</th>
-                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Type of Expense</th>
-                  <th className="text-right py-4 px-6 font-semibold text-slate-700 text-sm">Amount</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Quantity</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 text-sm">Payment Mode</th>
-                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Type</th>
-                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Actions</th>
-                  <th className="text-center py-4 px-6 font-semibold text-slate-700 text-sm">Delete</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-400 text-sm">Date</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-400 text-sm">Particular</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-400 text-sm">Category</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-400 text-sm">Type of Expense</th>
+                  <th className="text-right py-4 px-6 font-semibold text-slate-400 text-sm">Amount</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-400 text-sm">Quantity</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-400 text-sm">Payment Mode</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-400 text-sm">Type</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-400 text-sm">Actions</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-400 text-sm">Delete</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEntries.map((entry, idx) => (
-                  <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50 transition-all duration-150">
-                    <td className="py-4 px-6 text-slate-700">
+                  <tr key={idx} className="border-b border-slate-700 hover:bg-slate-700/30">
+                    <td className="py-4 px-6 text-slate-300">
                       {entry.date ? new Date(entry.date).toLocaleDateString('en-IN') : '-'}
                     </td>
-                    <td className="py-4 px-6 text-slate-700 font-medium">{entry.particular || '-'}</td>
-                    <td className="py-4 px-6 text-slate-700">{entry.category || '-'}</td>
+                    <td className="py-4 px-6 text-slate-300 font-medium">{entry.particular || '-'}</td>
+                    <td className="py-4 px-6 text-slate-300">{entry.category || '-'}</td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        entry.typeofExpense === 'LABOUR' 
-                          ? 'bg-emerald-100 text-emerald-700' 
-                          : 'bg-red-100 text-slate-700'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${entry.typeofExpense === 'LABOUR' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-600 text-slate-300'}`}>
                         {entry.typeofExpense || '-'}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <span className={`font-bold ${entry.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <span className={`font-bold ${entry.type === 'INCOME' ? 'text-emerald-400' : 'text-red-400'}`}>
                         ₹{entry.amount ? entry.amount.toLocaleString('en-IN') : 0}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-slate-700">{entry.Quantity || '-'}</td>
-                    <td className="py-4 px-6 text-slate-700">{entry.paymentMode || '-'}</td>
+                    <td className="py-4 px-6 text-slate-300">{entry.Quantity || '-'}</td>
+                    <td className="py-4 px-6 text-slate-300">{entry.paymentMode || '-'}</td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        entry.type === 'INCOME' 
-                          ? 'bg-emerald-100 text-emerald-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${entry.type === 'INCOME' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
                         {entry.type}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <button
-                        onClick={() => {
-                          console.log('Editing entry:', entry);
-                          console.log('Entry fields:', {
-                            date: entry.date,
-                            type: entry.type,
-                            typeofExpense: entry.typeofExpense,
-                            category: entry.category,
-                            amount: entry.amount,
-                            Quantity: entry.Quantity,
-                            particular: entry.particular,
-                            paymentMode: entry.paymentMode
-                          });
-                          setNewEntry(entry);
-                          setIsEditing(true);
-                          setEditingEntryId(entry._id || '');
-                          setShowModal(true);
-                        }}
-                        className="text-blue-500 hover:text-blue-700 font-medium text-sm"
-                      >
+                      <button onClick={() => { setNewEntry(entry); setIsEditing(true); setEditingEntryId(entry._id || ''); setShowModal(true); }} className="text-primary-400 hover:text-primary-300 font-medium text-sm">
                         Edit
                       </button>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <button
-                        onClick={() => deleteEntry(entry._id?.toString()||"")} // assuming _id exists
-                        className="text-red-500 hover:text-red-700 font-medium text-sm"
-                      >
-                        Delete  
-  </button>
-</td>
+                      <button onClick={() => deleteEntry(entry._id?.toString()||"")} className="text-red-400 hover:text-red-300 font-medium text-sm">
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
                   <tr>
                     <td colSpan={9} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center gap-3">
-                        <Receipt className="w-12 h-12 text-slate-300" />
-                        <p className="text-lg font-medium">No entries available</p>
+                        <Receipt className="w-12 h-12 text-slate-600" />
+                        <p className="text-lg font-medium text-slate-400">No entries available</p>
                         <p className="text-sm">Start by adding your first ledger entry</p>
                       </div>
                     </td>
@@ -541,150 +466,160 @@ const expense = filteredEntries
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Excel-style Entry Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">{isEditing ? 'Edit Entry' : 'Add New Entry'}</h3>
-                <p className="text-slate-600 text-sm mt-1">{isEditing ? 'Update the transaction details' : 'Enter the transaction details'}</p>
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                  <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-100">{isEditing ? 'Edit Entry' : 'New Ledger Entry'}</h3>
+                  <p className="text-slate-500 text-xs">Fill in the row below like a spreadsheet</p>
+                </div>
               </div>
-              <button 
-                onClick={() => {
-                  setShowModal(false);
-                  setIsEditing(false);
-                  setEditingEntryId('');
-                  setNewEntry({});
-                }}
-                className="p-2 hover:bg-slate-100 rounded-xl transition-colors duration-200"
-              >
-                <X className="w-5 h-5 text-slate-500" />
+              <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingEntryId(''); setNewEntry({}); }} className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-200">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Date
-                </label>
-                <input 
-                  type="date" 
-                  value={newEntry.date || ''}
-                  placeholder="Select date"
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })} 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  <Receipt className="w-4 h-4" />
-                  Particular
-                </label>
-                <input 
-                  placeholder="Enter description" 
-                  value={newEntry.particular || ''}
-                  type="text"
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, particular: e.target.value })} 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Amount (₹)</label>
-                <input 
-                  placeholder="0.00" 
-                  type="number" 
-                  value={newEntry.amount || ''}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, amount: Number(e.target.value) })} 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Quantity
-                </label>
-                <input 
-                  placeholder="Quantity"
-                  type="number" 
-                  value={newEntry.Quantity || ''}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, Quantity: Number(e.target.value )})} 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  Payment Mode
-                </label>
-                <input 
-                  placeholder="Cash, UPI, Bank Transfer, etc." 
-                  value={newEntry.paymentMode || ''}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, paymentMode: e.target.value })} 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
-                <input 
-                  placeholder="Enter category" 
-                  type="text"
-                  value={newEntry.category || ''}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })} 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Transaction Type</label>
-                <select 
-                  value={newEntry.type || ''}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as 'INCOME' | 'EXPENSE' })}
-                >
-                  <option value="">Select Type</option>
-                  <option value="INCOME">💰 Income</option>
-                  <option value="EXPENSE">💸 Expense</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Expenses Type</label>
-                <select 
-                  value={newEntry.typeofExpense || ''}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:border-blue-500 focus:bg-white focus:outline-none transition-all duration-200" 
-                  onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MATERIAL' })}
-                >
-                  <option value="">Select Type</option>
-                  <option value="LABOUR"> Labour</option>
-                  <option value="MATERIAL"> Material</option>
-                </select>
+
+            {/* Spreadsheet-style form */}
+            <div className="flex-1 overflow-auto">
+              <div className="min-w-[700px]">
+                {/* Column Headers - like Excel */}
+                <div className="grid grid-cols-12 bg-slate-700/80 border-b border-slate-600 sticky top-0">
+                  <div className="col-span-2 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-r border-slate-600">Date</div>
+                  <div className="col-span-3 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-r border-slate-600">Particular</div>
+                  <div className="col-span-1 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-r border-slate-600 text-right">Qty</div>
+                  <div className="col-span-2 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-r border-slate-600 text-right">Amount (₹)</div>
+                  <div className="col-span-2 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-r border-slate-600">Type</div>
+                  <div className="col-span-2 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">Expense Type</div>
+                </div>
+
+                {/* Input Row - like a spreadsheet row */}
+                <div className="grid grid-cols-12 border-b border-slate-600 bg-slate-800">
+                  <div className="col-span-2 border-r border-slate-600">
+                    <input
+                      type="date"
+                      value={newEntry.date || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, date: e.target.value })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0"
+                    />
+                  </div>
+                  <div className="col-span-3 border-r border-slate-600">
+                    <input
+                      type="text"
+                      placeholder="Description..."
+                      value={newEntry.particular || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, particular: e.target.value })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm placeholder-slate-500 focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0"
+                    />
+                  </div>
+                  <div className="col-span-1 border-r border-slate-600">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newEntry.Quantity || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, Quantity: Number(e.target.value) })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm text-right placeholder-slate-500 focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0"
+                    />
+                  </div>
+                  <div className="col-span-2 border-r border-slate-600">
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={newEntry.amount || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, amount: Number(e.target.value) })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm text-right placeholder-slate-500 focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0 font-medium"
+                    />
+                  </div>
+                  <div className="col-span-2 border-r border-slate-600">
+                    <select
+                      value={newEntry.type || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as 'INCOME' | 'EXPENSE' })}
+                      className={`w-full h-full px-3 py-3 bg-transparent text-sm focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0 ${newEntry.type === 'INCOME' ? 'text-emerald-400' : newEntry.type === 'EXPENSE' ? 'text-red-400' : 'text-slate-400'}`}
+                    >
+                      <option value="" className="bg-slate-800 text-slate-400">Select...</option>
+                      <option value="INCOME" className="bg-slate-800 text-emerald-400">INCOME</option>
+                      <option value="EXPENSE" className="bg-slate-800 text-red-400">EXPENSE</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <select
+                      value={newEntry.typeofExpense || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, typeofExpense: e.target.value as 'LABOUR' | 'MATERIAL' })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0"
+                    >
+                      <option value="" className="bg-slate-800 text-slate-400">Select...</option>
+                      <option value="LABOUR" className="bg-slate-800">LABOUR</option>
+                      <option value="MATERIAL" className="bg-slate-800">MATERIAL</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Second row for additional fields */}
+                <div className="grid grid-cols-12 bg-slate-800/50 border-b border-slate-600">
+                  <div className="col-span-2 px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-600 flex items-center">Category</div>
+                  <div className="col-span-4 border-r border-slate-600">
+                    <input
+                      type="text"
+                      placeholder="e.g. Cement, Steel, Wages..."
+                      value={newEntry.category || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, category: e.target.value })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm placeholder-slate-500 focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0"
+                    />
+                  </div>
+                  <div className="col-span-2 px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide border-r border-slate-600 flex items-center">Payment</div>
+                  <div className="col-span-4">
+                    <select
+                      value={newEntry.paymentMode || ''}
+                      onChange={(e) => setNewEntry({ ...newEntry, paymentMode: e.target.value })}
+                      className="w-full h-full px-3 py-3 bg-transparent text-slate-200 text-sm focus:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-primary-500 border-0"
+                    >
+                      <option value="" className="bg-slate-800 text-slate-400">Select mode...</option>
+                      <option value="Cash" className="bg-slate-800">Cash</option>
+                      <option value="UPI" className="bg-slate-800">UPI</option>
+                      <option value="Bank Transfer" className="bg-slate-800">Bank Transfer</option>
+                      <option value="Cheque" className="bg-slate-800">Cheque</option>
+                      <option value="Credit" className="bg-slate-800">Credit</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
-              <button 
-                onClick={() => {
-                  setShowModal(false);
-                  setIsEditing(false);
-                  setEditingEntryId('');
-                  setNewEntry({});
-                }} 
-                className="px-6 py-3 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all duration-200 font-medium"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleAddEntry} 
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                {isEditing ? 'Update Entry' : 'Add Entry'}
-              </button>
+
+            {/* Preview & Actions */}
+            <div className="px-6 py-4 border-t border-slate-700 bg-slate-800/80">
+              {/* Quick preview */}
+              {(newEntry.particular || newEntry.amount) && (
+                <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
+                  <div className="text-xs text-slate-500 mb-1">Preview:</div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-slate-400">{newEntry.date || 'No date'}</span>
+                    <span className="text-slate-200 font-medium flex-1">{newEntry.particular || 'No description'}</span>
+                    <span className={`font-bold ${newEntry.type === 'INCOME' ? 'text-emerald-400' : newEntry.type === 'EXPENSE' ? 'text-red-400' : 'text-slate-400'}`}>
+                      {newEntry.type === 'EXPENSE' ? '-' : ''}₹{(newEntry.amount || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-slate-500">
+                  Tip: Press Tab to move between cells
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => { setShowModal(false); setIsEditing(false); setEditingEntryId(''); setNewEntry({}); }} className="px-5 py-2.5 text-slate-300 hover:bg-slate-700 rounded-lg font-medium text-sm">
+                    Cancel
+                  </button>
+                  <button onClick={handleAddEntry} className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    {isEditing ? 'Update Entry' : 'Add to Ledger'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

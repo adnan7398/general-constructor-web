@@ -12,6 +12,7 @@ import resourcesrouter from './routes/resources.js';
 import profileRoutes from './routes/profile.js';
 import settingsRoutes from './routes/settings.js';
 import quotesRoutes from './routes/quotes.js';
+import reportRoutes from './routes/reports.js';
 
 const app = express();
 const allowedOrigins = [
@@ -54,6 +55,7 @@ app.use('/resources', resourcesrouter);
 app.use('/profile', profileRoutes);
 app.use('/settings', settingsRoutes);
 app.use('/quotes', quotesRoutes);
+app.use('/reports', reportRoutes);
 
 const PORT = process.env.PORT || 3000;
 console.log(`MongoDB URL : ${process.env.MONGO_URL}`);

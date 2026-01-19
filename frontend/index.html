@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Workaround: Cursor/IDE-injected "client" scripts may expect __WS_TOKEN__ for WebSocket; define it to avoid ReferenceError. -->
+    <script>var __WS_TOKEN__ = '';</script>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Divine Developer | Construction Services</title>

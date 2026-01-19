@@ -72,12 +72,9 @@ const BudgetUtilization: React.FC = () => {
 
   const getStatusClass = (status: string) => {
     switch (status) {
-      case 'under-budget':
-        return 'text-green-600 bg-green-50';
-      case 'over-budget':
-        return 'text-red-600 bg-red-50';
-      default:
-        return 'text-blue-600 bg-blue-50';
+      case 'under-budget': return 'text-emerald-400 bg-emerald-500/20';
+      case 'over-budget': return 'text-red-400 bg-red-500/20';
+      default: return 'text-blue-400 bg-blue-500/20';
     }
   };
 
@@ -89,45 +86,41 @@ const BudgetUtilization: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-100">
+    <div className="bg-slate-800 rounded-xl border border-slate-700">
+      <div className="px-4 py-5 sm:px-6 border-b border-slate-700">
         <div className="flex items-center">
-          <DollarSign className="h-5 w-5 text-blue-600 mr-2" />
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Budget Utilization</h3>
+          <DollarSign className="h-5 w-5 text-primary-400 mr-2" />
+          <h3 className="text-lg leading-6 font-medium text-slate-100">Budget Utilization</h3>
         </div>
       </div>
       <div className="px-4 py-5 sm:p-6">
         <div className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-slate-700">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Budget</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Utilization</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Project</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Budget</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Utilization</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-700">
                 {budgetData.map((item, idx) => {
                   const percentage = item.allocated === 0 ? 0 : Math.round((item.spent / item.allocated) * 100);
-
                   return (
-                    <tr key={idx}>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.project}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                    <tr key={idx} className="hover:bg-slate-700/30">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-100">{item.project}</td>
+                      <td className="px-6 py-4 text-sm text-slate-400">
                         <div>{formatCurrency(item.allocated)}</div>
-                        <div className="text-xs text-gray-400">Spent: {formatCurrency(item.spent)}</div>
+                        <div className="text-xs text-slate-500">Spent: {formatCurrency(item.spent)}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm text-slate-400">
                         <div className="flex items-center">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2 flex-grow">
-                            <div
-                              className={`h-2.5 rounded-full ${getProgressClass(item.spent, item.allocated)}`}
-                              style={{ width: `${percentage}%` }}
-                            />
+                          <div className="w-full bg-slate-600 rounded-full h-2.5 mr-2 flex-grow">
+                            <div className={`h-2.5 rounded-full ${getProgressClass(item.spent, item.allocated)}`} style={{ width: `${Math.min(percentage, 100)}%` }} />
                           </div>
-                          <span className="text-xs font-medium">{percentage}%</span>
+                          <span className="text-xs font-medium text-slate-300">{percentage}%</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -141,10 +134,7 @@ const BudgetUtilization: React.FC = () => {
                 })}
               </tbody>
             </table>
-
-            {budgetData.length === 0 && (
-              <p className="text-center text-sm text-gray-500 py-4">No budget data available.</p>
-            )}
+            {budgetData.length === 0 && <p className="text-center text-sm text-slate-500 py-4">No budget data available.</p>}
           </div>
         </div>
       </div>
