@@ -35,15 +35,16 @@ const getWeekInfo = (date = new Date()) => {
 // Get all reports (with optional filters)
 reportRoutes.get('/', async (req, res) => {
   try {
-    const { projectId, year, weekNumber } = req.query;
+    const { projectId, year, weekNumber, status } = req.query;
     const filter = {};
     if (projectId) filter.project = projectId;
     if (year) filter.year = parseInt(year);
     if (weekNumber) filter.weekNumber = parseInt(weekNumber);
+    if (status) filter.status = status;
     
     const reports = await Report.find(filter)
       .sort({ year: -1, weekNumber: -1 })
-      .populate('project', 'name status projectType');
+      .populate('project', 'name status projectType location');
     res.json(reports);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -93,7 +94,8 @@ reportRoutes.get('/current/:projectId', async (req, res) => {
         weekStartDate,
         weekEndDate,
         progress: {
-          previousWeekProgress: prevReport?.progress?.percentageComplete || 0,
+          previousWeekProgress: prevReport?.progress?.percentageComplete || project.progress || 0,
+          percentageComplete: project.progress || 0,
         },
       });
       await report.save();
@@ -148,35 +150,53 @@ reportRoutes.post('/', async (req, res) => {
   }
 });
 
-// Update report
+// Update report - comprehensive update
 reportRoutes.put('/:id', async (req, res) => {
   try {
-    const { labour, financial, progress, workCompleted, upcomingWork, issues, notes } = req.body;
-    
-    const updateData = { lastUpdated: new Date() };
-    if (labour) updateData.labour = labour;
-    if (financial) {
-      updateData.financial = {
-        ...financial,
-        netAmount: (financial.weeklyIncome || 0) - (financial.weeklyExpense || 0),
-      };
-    }
-    if (progress) {
-      const report = await Report.findById(req.params.id);
-      updateData.progress = {
-        ...progress,
-        weeklyProgressGain: (progress.percentageComplete || 0) - (report?.progress?.previousWeekProgress || 0),
-      };
-    }
-    if (workCompleted) updateData.workCompleted = workCompleted;
-    if (upcomingWork) updateData.upcomingWork = upcomingWork;
-    if (issues) updateData.issues = issues;
-    if (notes !== undefined) updateData.notes = notes;
-    
-    const report = await Report.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    const report = await Report.findById(req.params.id);
     if (!report) return res.status(404).json({ error: 'Report not found' });
     
-    res.json({ message: 'Report updated', report });
+    const allowedFields = [
+      'labour', 'materials', 'equipment', 'financial', 'progress',
+      'workCompleted', 'upcomingWork', 'safety', 'weather', 'quality',
+      'issues', 'photos', 'visitors', 'notes', 'highlights', 'status'
+    ];
+    
+    const updateData = { lastUpdated: new Date() };
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+    
+    // Calculate net amount if financial data updated
+    if (updateData.financial) {
+      const f = updateData.financial;
+      updateData.financial.weeklyExpense = (f.labourCost || 0) + (f.materialCost || 0) + 
+        (f.equipmentCost || 0) + (f.transportCost || 0) + (f.utilityCost || 0) + (f.miscCost || 0);
+      updateData.financial.netAmount = (f.weeklyIncome || 0) + (f.clientPayment || 0) + 
+        (f.advanceReceived || 0) - updateData.financial.weeklyExpense;
+    }
+    
+    // Calculate weekly progress gain
+    if (updateData.progress) {
+      updateData.progress.weeklyProgressGain = 
+        (updateData.progress.percentageComplete || 0) - (report.progress?.previousWeekProgress || 0);
+    }
+    
+    const updatedReport = await Report.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    
+    // Also update project progress
+    if (updateData.progress?.percentageComplete !== undefined) {
+      await Project.findByIdAndUpdate(report.project, { 
+        progress: updateData.progress.percentageComplete,
+        healthStatus: updateData.progress.status === 'at-risk' ? 'red' : 
+                     updateData.progress.status === 'behind' ? 'yellow' : 'green'
+      });
+    }
+    
+    res.json({ message: 'Report updated', report: updatedReport });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -185,11 +205,20 @@ reportRoutes.put('/:id', async (req, res) => {
 // Add labour entry
 reportRoutes.post('/:id/labour', async (req, res) => {
   try {
-    const { date, workers, description } = req.body;
+    const { date, workers, skilled, unskilled, description, shift } = req.body;
     const report = await Report.findById(req.params.id);
     if (!report) return res.status(404).json({ error: 'Report not found' });
     
-    report.labour.details.push({ date, workers, description });
+    report.labour.details.push({ 
+      date, 
+      workers, 
+      skilled: skilled || 0,
+      unskilled: unskilled || 0,
+      description,
+      shift: shift || 'day'
+    });
+    
+    // Recalculate totals
     report.labour.totalWorkers = report.labour.details.reduce((sum, d) => sum + (d.workers || 0), 0);
     report.labour.workingDays = report.labour.details.length;
     report.labour.totalManDays = report.labour.details.reduce((sum, d) => sum + (d.workers || 0), 0);
@@ -202,14 +231,67 @@ reportRoutes.post('/:id/labour', async (req, res) => {
   }
 });
 
-// Add work completed entry
-reportRoutes.post('/:id/work', async (req, res) => {
+// Add material entry
+reportRoutes.post('/:id/material', async (req, res) => {
   try {
-    const { task, description, completedOn } = req.body;
+    const { name, category, quantity, unit, unitCost, supplier, deliveryDate, invoiceNo } = req.body;
     const report = await Report.findById(req.params.id);
     if (!report) return res.status(404).json({ error: 'Report not found' });
     
-    report.workCompleted.push({ task, description, completedOn: completedOn || new Date() });
+    const totalCost = (quantity || 0) * (unitCost || 0);
+    
+    report.materials.items.push({
+      name, category, quantity, unit, unitCost, totalCost, supplier, deliveryDate, invoiceNo
+    });
+    
+    // Recalculate total material cost
+    report.materials.totalCost = report.materials.items.reduce((sum, m) => sum + (m.totalCost || 0), 0);
+    report.financial.materialCost = report.materials.totalCost;
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Material entry added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add equipment entry
+reportRoutes.post('/:id/equipment', async (req, res) => {
+  try {
+    const { name, type, hoursUsed, fuelCost, rentalCost, maintenanceCost, operator, status } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    report.equipment.items.push({
+      name, type, hoursUsed, fuelCost, rentalCost, maintenanceCost, operator, status
+    });
+    
+    // Recalculate total equipment cost
+    report.equipment.totalCost = report.equipment.items.reduce((sum, e) => 
+      sum + (e.fuelCost || 0) + (e.rentalCost || 0) + (e.maintenanceCost || 0), 0);
+    report.financial.equipmentCost = report.equipment.totalCost;
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Equipment entry added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add work completed entry
+reportRoutes.post('/:id/work', async (req, res) => {
+  try {
+    const { task, description, completedOn, category, quantity, location } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    report.workCompleted.push({ 
+      task, description, 
+      completedOn: completedOn || new Date(),
+      category, quantity, location
+    });
     report.lastUpdated = new Date();
     
     await report.save();
@@ -219,18 +301,182 @@ reportRoutes.post('/:id/work', async (req, res) => {
   }
 });
 
-// Add issue
-reportRoutes.post('/:id/issue', async (req, res) => {
+// Add safety incident
+reportRoutes.post('/:id/safety', async (req, res) => {
   try {
-    const { issue, severity } = req.body;
+    const { type, description, severity, actionTaken, reportedBy } = req.body;
     const report = await Report.findById(req.params.id);
     if (!report) return res.status(404).json({ error: 'Report not found' });
     
-    report.issues.push({ issue, severity, status: 'open', reportedOn: new Date() });
+    report.safety.incidents.push({
+      date: new Date(),
+      type, description, severity, actionTaken, reportedBy
+    });
+    
+    // Update counts
+    if (type === 'near-miss') {
+      report.safety.nearMissCount = (report.safety.nearMissCount || 0) + 1;
+    } else {
+      report.safety.incidentCount = (report.safety.incidentCount || 0) + 1;
+    }
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Safety incident added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add weather entry
+reportRoutes.post('/:id/weather', async (req, res) => {
+  try {
+    const { date, condition, workStatus, remarks } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    report.weather.conditions.push({ date, condition, workStatus, remarks });
+    
+    // Update weather summary
+    const conditions = report.weather.conditions;
+    report.weather.rainDays = conditions.filter(c => c.condition === 'rainy' || c.condition === 'stormy').length;
+    report.weather.haltDays = conditions.filter(c => c.workStatus === 'no-work').length;
+    report.weather.workingDays = conditions.filter(c => c.workStatus === 'full-work').length;
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Weather entry added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add quality test
+reportRoutes.post('/:id/quality', async (req, res) => {
+  try {
+    const { type, result, value, standard, remarks } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    report.quality.tests.push({
+      date: new Date(),
+      type, result, value, standard, remarks
+    });
+    
+    // Update quality summary
+    const tests = report.quality.tests;
+    report.quality.testsCompleted = tests.length;
+    report.quality.testsPassed = tests.filter(t => t.result === 'passed').length;
+    report.quality.testsFailed = tests.filter(t => t.result === 'failed').length;
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Quality test added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add issue
+reportRoutes.post('/:id/issue', async (req, res) => {
+  try {
+    const { issue, category, severity, impact, assignedTo } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    report.issues.push({ 
+      issue, 
+      category: category || 'other',
+      severity: severity || 'minor', 
+      status: 'open', 
+      impact,
+      assignedTo,
+      reportedOn: new Date() 
+    });
     report.lastUpdated = new Date();
     
     await report.save();
     res.json({ message: 'Issue added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Update issue status
+reportRoutes.patch('/:id/issue/:issueIndex', async (req, res) => {
+  try {
+    const { status, actionTaken, resolvedOn } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    const issueIndex = parseInt(req.params.issueIndex);
+    if (issueIndex < 0 || issueIndex >= report.issues.length) {
+      return res.status(400).json({ error: 'Invalid issue index' });
+    }
+    
+    if (status) report.issues[issueIndex].status = status;
+    if (actionTaken) report.issues[issueIndex].actionTaken = actionTaken;
+    if (status === 'resolved') report.issues[issueIndex].resolvedOn = resolvedOn || new Date();
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Issue updated', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Add visitor entry
+reportRoutes.post('/:id/visitor', async (req, res) => {
+  try {
+    const { name, designation, organization, purpose, remarks } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    report.visitors.push({
+      date: new Date(),
+      name, designation, organization, purpose, remarks
+    });
+    report.lastUpdated = new Date();
+    
+    await report.save();
+    res.json({ message: 'Visitor entry added', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Submit report for approval
+reportRoutes.patch('/:id/submit', async (req, res) => {
+  try {
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { status: 'submitted', lastUpdated: new Date() },
+      { new: true }
+    );
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    res.json({ message: 'Report submitted for approval', report });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Approve report
+reportRoutes.patch('/:id/approve', async (req, res) => {
+  try {
+    const { approvedBy } = req.body;
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { 
+        status: 'approved', 
+        approvedBy, 
+        approvedAt: new Date(),
+        lastUpdated: new Date() 
+      },
+      { new: true }
+    );
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    res.json({ message: 'Report approved', report });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -245,21 +491,38 @@ reportRoutes.get('/summary/weekly', async (req, res) => {
     const reports = await Report.find({
       weekNumber: weekNumber ? parseInt(weekNumber) : currentWeek,
       year: year ? parseInt(year) : currentYear,
-    }).populate('project', 'name status projectType');
+    }).populate('project', 'name status projectType location healthStatus');
     
     const summary = {
       weekNumber: weekNumber || currentWeek,
       year: year || currentYear,
       totalProjects: reports.length,
+      
+      // Financial summary
+      totalIncome: reports.reduce((sum, r) => sum + (r.financial?.weeklyIncome || 0) + (r.financial?.clientPayment || 0), 0),
+      totalExpense: reports.reduce((sum, r) => sum + (r.financial?.weeklyExpense || 0), 0),
       totalLabourCost: reports.reduce((sum, r) => sum + (r.financial?.labourCost || 0), 0),
       totalMaterialCost: reports.reduce((sum, r) => sum + (r.financial?.materialCost || 0), 0),
-      totalIncome: reports.reduce((sum, r) => sum + (r.financial?.weeklyIncome || 0), 0),
-      totalExpense: reports.reduce((sum, r) => sum + (r.financial?.weeklyExpense || 0), 0),
+      totalEquipmentCost: reports.reduce((sum, r) => sum + (r.financial?.equipmentCost || 0), 0),
+      
+      // Labour summary
+      totalManDays: reports.reduce((sum, r) => sum + (r.labour?.totalManDays || 0), 0),
+      
+      // Progress summary
       averageProgress: reports.length > 0 
         ? reports.reduce((sum, r) => sum + (r.progress?.percentageComplete || 0), 0) / reports.length 
         : 0,
       projectsOnTrack: reports.filter(r => r.progress?.status === 'on-track' || r.progress?.status === 'ahead').length,
-      projectsAtRisk: reports.filter(r => r.progress?.status === 'at-risk' || r.progress?.status === 'behind').length,
+      projectsAtRisk: reports.filter(r => r.progress?.status === 'at-risk' || r.progress?.status === 'behind' || r.progress?.status === 'halted').length,
+      
+      // Safety summary
+      totalIncidents: reports.reduce((sum, r) => sum + (r.safety?.incidentCount || 0), 0),
+      totalNearMisses: reports.reduce((sum, r) => sum + (r.safety?.nearMissCount || 0), 0),
+      
+      // Issues summary
+      openIssues: reports.reduce((sum, r) => sum + (r.issues?.filter(i => i.status === 'open').length || 0), 0),
+      criticalIssues: reports.reduce((sum, r) => sum + (r.issues?.filter(i => i.severity === 'critical' && i.status !== 'resolved').length || 0), 0),
+      
       reports,
     };
     
