@@ -87,12 +87,13 @@ const Projects: React.FC = () => {
     if (!editingProject) return;
     await updateProject(id, editingProject);
     loadAllProjects();
+    loadProjects(); // Refresh the list view
     setEditingProject(null);
   };
 
   // Utils
   const filteredProjects = projects.filter(
-    (p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    (p) => (p.title || p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || p.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const showcaseProjects = allProjects.filter((p) => p.showOnWebsite).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
@@ -180,7 +181,7 @@ const Projects: React.FC = () => {
                       </div>
                     </div>
                     <div className="p-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{project.name}</h4>
+                      <h4 className="font-semibold text-gray-900 truncate">{project.title || project.name}</h4>
                       <p className="text-xs text-gray-500 mt-1 capitalize">{project.projectType} • {project.status}</p>
                     </div>
                   </Card>
@@ -203,7 +204,7 @@ const Projects: React.FC = () => {
                     <img src={getImageUrl(project.images?.[0] || project.image)} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">{project.name}</h4>
+                    <h4 className="text-sm font-medium text-gray-900 truncate">{project.title || project.name}</h4>
                     <p className="text-xs text-gray-500 capitalize">{project.projectType}</p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleToggleShowcase(project._id)} title="Add to Showcase">
@@ -262,7 +263,7 @@ const Projects: React.FC = () => {
                             <img src={getImageUrl(project.images?.[0] || project.image)} alt="" className="w-full h-full object-cover" />
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{project.name}</div>
+                            <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{project.title || project.name}</div>
                             {project.location && (
                               <div className="flex items-center text-xs text-gray-500 mt-0.5">
                                 <MapPin className="w-3 h-3 mr-1" />
@@ -310,8 +311,8 @@ const Projects: React.FC = () => {
             <div className="p-6 space-y-4">
               <Input
                 label="Project Name"
-                value={editingProject.name}
-                onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+                value={editingProject.title || editingProject.name || ''}
+                onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value, name: e.target.value })}
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>

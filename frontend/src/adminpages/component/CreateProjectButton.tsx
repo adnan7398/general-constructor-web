@@ -1,41 +1,51 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { addProject } from '../../api/projects'; 
+import { addProject } from '../../api/projects';
 import { Project } from '../../api/projects.ts';
 
 const CreateProjectButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
-  const [projectType, setProjectType] = useState<Project['projectType']>('commercial');
+  const [projectType, setProjectType] = useState<string>('Commercial'); // Default to capitalized
   const [startDate, setStartDate] = useState('');
   const [budget, setBudget] = useState<number | ''>('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState(''); // New state
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => {
     setIsOpen(false);
     setName('');
-    setProjectType('commercial');
+    setProjectType('Commercial');
     setStartDate('');
     setBudget('');
     setDescription('');
+    setLocation('');
   };
 
   const handleCreateProject = async () => {
     try {
-      await addProject({
-        name,
-        projectType,
-        status: 'ongoing', 
-        startDate,
+      // Map frontend keys to backend schema
+      // Backend expects: title, category, location, images, description, etc.
+      const payload: any = {
+        title: name,
+        category: projectType, // Casing already handled in select
+        location: location,
+        description: description,
+        status: 'upcoming',
+        startDate: startDate,
         budget: Number(budget),
-        description,
-      });
+        images: ['https://placehold.co/600x400'] // Default image to satisfy required array
+      };
+
+      await addProject(payload);
       alert('Project created successfully!');
       closeModal();
-    } catch (err) {
+      // Optionally trigger refresh here if passed as prop
+      window.location.reload(); // Temporary force refresh to see new project
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to create project');
+      alert('Failed to create project: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -77,15 +87,30 @@ const CreateProjectButton: React.FC = () => {
                       <label className="block text-sm font-medium text-slate-300">Project Type</label>
                       <select
                         value={projectType}
-                        onChange={(e) => setProjectType(e.target.value as Project['projectType'])}
+                        onChange={(e) => setProjectType(e.target.value)}
                         className="mt-1 block w-full sm:text-sm border border-slate-600 bg-slate-700/50 text-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
                       >
-                        <option value="commercial">Commercial</option>
-                        <option value="residential">Residential</option>
-                        <option value="industrial">Industrial</option>
-                        <option value="infrastructure">Infrastructure</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Residential">Residential</option>
+                        <option value="Industrial">Industrial</option>
+                        <option value="Infrastructure">Infrastructure</option>
+                        <option value="Renovation">Renovation</option>
+                        <option value="Interior">Interior</option>
                       </select>
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300">Location</label>
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="mt-1 block w-full sm:text-sm border border-slate-600 bg-slate-700/50 text-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 placeholder-slate-500"
+                        placeholder="City, Country"
+                      />
+                    </div>
+
+
 
                     <div>
                       <label className="block text-sm font-medium text-slate-300">Start Date</label>

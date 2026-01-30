@@ -9,18 +9,18 @@ const App: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com';
+  const API_BASE_URL = 'http://localhost:3000';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       alert('Please enter both email and password.');
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: 'POST',
@@ -41,14 +41,14 @@ const App: React.FC = () => {
       if (!response.ok) {
         throw new Error(data.message || 'Authentication failed');
       }
-      
+
       localStorage.setItem('token', data.token);
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       }
-      
+
       console.log('Logged in successfully');
-       navigate('/dashboard'); // Uncomment when router is available
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       alert('Login failed. Please check your credentials.');
@@ -60,7 +60,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center px-4 py-8">
       {/* Background Pattern */}
-      <div 
+      <div
         className="absolute inset-0 opacity-30"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`

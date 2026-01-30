@@ -2,7 +2,8 @@ import axios from 'axios';
 
 export interface Project {
   _id: string;
-  name: string;
+  title: string; // Backend uses title
+  name?: string; // Legacy/Frontend state
   description?: string;
   projectType: 'commercial' | 'residential' | 'industrial' | 'infrastructure' | 'public';
   startDate?: string;

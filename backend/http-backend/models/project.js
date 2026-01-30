@@ -15,6 +15,11 @@ const projectSchema = new mongoose.Schema({
     required: true,
     enum: ['Residential', 'Commercial', 'Industrial', 'Infrastructure', 'Renovation', 'Interior']
   },
+  status: {
+    type: String,
+    enum: ['upcoming', 'ongoing', 'completed'],
+    default: 'upcoming'
+  },
   location: {
     type: String,
     required: true

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import UserProfile from '../models/userprofile.js';
+import User from '../models/admin.js';
 
 export const verifyToken = async (req, res, next) => {
     const authHeader = req.header("Authorization");
@@ -9,13 +9,25 @@ export const verifyToken = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Decoded Token:', decoded); // DEBUG
+
         if (!decoded) {
-            return res.status(401).json({ message: 'Unauthorized' });
+            console.log('Token decode failed'); // DEBUG
+            return res.status(401).json({ message: 'Unauthorized: Invalid token' });
         }
 
-        const user = await UserProfile.findById(decoded.id);
+        const user = await User.findById(decoded.id);
+        const count = await User.countDocuments();
+        console.log('Middleware Debug:', {
+            decodedId: decoded.id,
+            userFound: !!user,
+            modelName: User.modelName,
+            collectionName: User.collection.name,
+            totalUsersInDB: count
+        });
+
         if (!user) {
-            return res.status(401).json({ message: 'User not found' });
+            return res.status(401).json({ message: 'User not found in DB (Check Logs)' });
         }
 
         // Normalize role to helper check
