@@ -11,7 +11,7 @@ const reportSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  
+
   // Week information
   weekNumber: {
     type: Number,
@@ -29,7 +29,32 @@ const reportSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  
+
+  // ============ ENTERPRISE LIFECYCLE ============
+  workflow: {
+    currentStep: {
+      type: String,
+      enum: ['draft', 'submitted_for_review', 'manager_review', 'approved', 'rejected'],
+      default: 'draft'
+    },
+    history: [{
+      action: { type: String, enum: ['created', 'submitted', 'approved', 'rejected', 'reverted'] },
+      by: { type: mongoose.Schema.Types.ObjectId, ref: 'UserProfile' }, // Changed ref to UserProfile to match existing user model
+      at: { type: Date, default: Date.now },
+      comments: String
+    }],
+    assignedApprover: { type: mongoose.Schema.Types.ObjectId, ref: 'UserProfile' }
+  },
+
+  version: { type: Number, default: 1 },
+  isLatest: { type: Boolean, default: true },
+
+  budgetSnapshots: {
+    originalBudget: Number,
+    revisedBudget: Number,
+    variance: Number
+  },
+
   // ============ LABOUR MANAGEMENT ============
   labour: {
     // Summary
@@ -38,7 +63,7 @@ const reportSchema = new mongoose.Schema({
     totalManDays: { type: Number, default: 0 },
     labourCost: { type: Number, default: 0 },
     overtime: { type: Number, default: 0 }, // Overtime hours
-    
+
     // Detailed breakdown by category
     breakdown: {
       skilled: { count: Number, cost: Number },      // Masons, Electricians, Plumbers
@@ -47,7 +72,7 @@ const reportSchema = new mongoose.Schema({
       supervisors: { count: Number, cost: Number },  // Site supervisors
       contractors: { count: Number, cost: Number },  // Sub-contractors
     },
-    
+
     // Daily attendance log
     details: [{
       date: Date,
@@ -58,7 +83,7 @@ const reportSchema = new mongoose.Schema({
       shift: { type: String, enum: ['day', 'night', 'both'], default: 'day' },
     }],
   },
-  
+
   // ============ MATERIAL TRACKING ============
   materials: {
     totalCost: { type: Number, default: 0 },
@@ -85,7 +110,7 @@ const reportSchema = new mongoose.Schema({
       status: { type: String, enum: ['sufficient', 'low', 'critical', 'out-of-stock'], default: 'sufficient' },
     }],
   },
-  
+
   // ============ EQUIPMENT & MACHINERY ============
   equipment: {
     totalCost: { type: Number, default: 0 },
@@ -103,14 +128,14 @@ const reportSchema = new mongoose.Schema({
       status: { type: String, enum: ['operational', 'under-maintenance', 'idle', 'breakdown'], default: 'operational' },
     }],
   },
-  
+
   // ============ FINANCIAL SUMMARY ============
   financial: {
     // Income
     weeklyIncome: { type: Number, default: 0 },
     clientPayment: { type: Number, default: 0 },
     advanceReceived: { type: Number, default: 0 },
-    
+
     // Expenses breakdown
     weeklyExpense: { type: Number, default: 0 },
     labourCost: { type: Number, default: 0 },
@@ -119,13 +144,13 @@ const reportSchema = new mongoose.Schema({
     transportCost: { type: Number, default: 0 },
     utilityCost: { type: Number, default: 0 },      // Electricity, Water
     miscCost: { type: Number, default: 0 },
-    
+
     // Summary
     netAmount: { type: Number, default: 0 },
     cashInHand: { type: Number, default: 0 },
     pendingPayments: { type: Number, default: 0 },
   },
-  
+
   // ============ PROGRESS TRACKING ============
   progress: {
     percentageComplete: { type: Number, default: 0, min: 0, max: 100 },
@@ -144,7 +169,7 @@ const reportSchema = new mongoose.Schema({
       variance: Number,              // Difference
     }],
   },
-  
+
   // ============ WORK ACTIVITIES ============
   workCompleted: [{
     task: String,
@@ -157,7 +182,7 @@ const reportSchema = new mongoose.Schema({
     quantity: String,                // e.g., "50 sqft", "10 columns"
     location: String,                // e.g., "Ground Floor", "Block A"
   }],
-  
+
   upcomingWork: [{
     task: String,
     plannedDate: Date,
@@ -169,14 +194,14 @@ const reportSchema = new mongoose.Schema({
     estimatedDays: Number,
     dependencies: [String],          // What needs to be done first
   }],
-  
+
   // ============ SAFETY & COMPLIANCE ============
   safety: {
     incidentCount: { type: Number, default: 0 },
     nearMissCount: { type: Number, default: 0 },
     safetyMeetingsHeld: { type: Number, default: 0 },
     ppeCompliance: { type: Number, default: 100 },  // Percentage
-    
+
     incidents: [{
       date: Date,
       type: { type: String, enum: ['injury', 'near-miss', 'property-damage', 'fire', 'other'] },
@@ -185,7 +210,7 @@ const reportSchema = new mongoose.Schema({
       actionTaken: String,
       reportedBy: String,
     }],
-    
+
     inspections: [{
       date: Date,
       type: String,                  // Safety, Quality, Government
@@ -194,7 +219,7 @@ const reportSchema = new mongoose.Schema({
       remarks: String,
     }],
   },
-  
+
   // ============ WEATHER IMPACT ============
   weather: {
     workingDays: { type: Number, default: 6 },
@@ -207,13 +232,13 @@ const reportSchema = new mongoose.Schema({
       remarks: String,
     }],
   },
-  
+
   // ============ QUALITY CONTROL ============
   quality: {
     testsCompleted: { type: Number, default: 0 },
     testsPassed: { type: Number, default: 0 },
     testsFailed: { type: Number, default: 0 },
-    
+
     tests: [{
       date: Date,
       type: String,                  // Concrete cube test, Soil test, etc.
@@ -222,7 +247,7 @@ const reportSchema = new mongoose.Schema({
       standard: String,              // Required value
       remarks: String,
     }],
-    
+
     defects: [{
       date: Date,
       location: String,
@@ -232,7 +257,7 @@ const reportSchema = new mongoose.Schema({
       resolution: String,
     }],
   },
-  
+
   // ============ ISSUES & BLOCKERS ============
   issues: [{
     issue: String,
@@ -256,7 +281,7 @@ const reportSchema = new mongoose.Schema({
     reportedOn: { type: Date, default: Date.now },
     resolvedOn: Date,
   }],
-  
+
   // ============ SITE PHOTOS ============
   photos: [{
     url: String,
@@ -264,7 +289,7 @@ const reportSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now },
     category: { type: String, enum: ['progress', 'issue', 'quality', 'safety', 'general'] },
   }],
-  
+
   // ============ VISITOR LOG ============
   visitors: [{
     date: Date,
@@ -274,19 +299,19 @@ const reportSchema = new mongoose.Schema({
     purpose: String,
     remarks: String,
   }],
-  
+
   // ============ NOTES & REMARKS ============
   notes: {
     type: String,
     default: '',
   },
-  
+
   // Key highlights for management
   highlights: [{
     type: { type: String, enum: ['achievement', 'concern', 'decision', 'milestone'] },
     description: String,
   }],
-  
+
   // ============ REPORT METADATA ============
   generatedAt: {
     type: Date,

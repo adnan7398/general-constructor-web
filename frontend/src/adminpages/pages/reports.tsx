@@ -2,40 +2,52 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText, Calendar, TrendingUp, TrendingDown, Users, DollarSign,
   AlertTriangle, CheckCircle, Clock, Plus, Download, ChevronDown,
-  ChevronRight, Building, Briefcase, ArrowUp, ArrowDown, Save,
-  Loader2, Package, Truck, Cloud, Shield, HardHat, Wrench,
-  ClipboardCheck, Eye, Send, ThumbsUp, AlertCircle, Sun, CloudRain
+  ChevronRight, Building, Package, Truck, Shield,
+  ClipboardCheck, Eye, Send, AlertCircle, Loader2, Save, Cloud,
+  HardHat, Sun, CloudRain, Briefcase
 } from 'lucide-react';
 import { getAllProjects, Project } from '../../api/projects';
 import {
   Report, getReports, getCurrentWeekReport, updateReport,
-  addLabourEntry, addMaterialEntry, addEquipmentEntry, addWorkEntry, 
+  addLabourEntry, addMaterialEntry, addEquipmentEntry, addWorkEntry,
   addIssue, addWeatherEntry, addSafetyIncident, addQualityTest,
-  getWeeklySummary, WeeklySummary, submitReport
+  approveReport, rejectReport, getBudgetAnalysis, getRiskMatrix, BudgetAnalysis,
+  WeeklySummary, getWeeklySummary, submitReport
 } from '../../api/reports';
 import PageHeader from '../component/PageHeader';
+import { useAuth } from '../../contexts/AuthContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 // Tab type
-type TabType = 'overview' | 'labour' | 'materials' | 'equipment' | 'safety' | 'quality' | 'issues' | 'history' | 'summary';
+type TabType = 'dashboard' | 'overview' | 'labour' | 'materials' | 'equipment' | 'safety' | 'quality' | 'issues' | 'history' | 'summary' | 'budget';
 
 const ReportsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isManager = user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER' || user?.role === 'Client';
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [currentReport, setCurrentReport] = useState<Report | null>(null);
   const [allReports, setAllReports] = useState<Report[]>([]);
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
+  const [budgetAnalysis, setBudgetAnalysis] = useState<BudgetAnalysis | null>(null);
+  const [riskMatrix, setRiskMatrix] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard'); // Default to dashboard
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
+
+  // Approval Modal State
+  const [controlAction, setControlAction] = useState<'approve' | 'reject' | null>(null);
+  const [controlComment, setControlComment] = useState('');
 
   // Editable states
   const [editProgress, setEditProgress] = useState(0);
   const [editStatus, setEditStatus] = useState<'on-track' | 'ahead' | 'behind' | 'at-risk' | 'halted'>('on-track');
   const [editFinancial, setEditFinancial] = useState({
-    weeklyIncome: 0, clientPayment: 0, labourCost: 0, materialCost: 0, 
+    weeklyIncome: 0, clientPayment: 0, labourCost: 0, materialCost: 0,
     equipmentCost: 0, transportCost: 0, miscCost: 0
   });
   const [editNotes, setEditNotes] = useState('');
@@ -62,8 +74,20 @@ const ReportsPage: React.FC = () => {
     if (selectedProject) {
       loadCurrentReport();
       loadAllReports();
+      loadAnalytics();
     }
   }, [selectedProject]);
+
+  const loadAnalytics = async () => {
+    try {
+      const [budget, risks] = await Promise.all([
+        getBudgetAnalysis(selectedProject),
+        getRiskMatrix(selectedProject)
+      ]);
+      setBudgetAnalysis(budget);
+      setRiskMatrix(risks);
+    } catch (e) { console.error("Error loading analytics", e); }
+  };
 
   const loadProjects = async () => {
     try {
@@ -124,14 +148,14 @@ const ReportsPage: React.FC = () => {
     if (!currentReport) return;
     setSaving(true);
     try {
-      const totalExpense = editFinancial.labourCost + editFinancial.materialCost + 
+      const totalExpense = editFinancial.labourCost + editFinancial.materialCost +
         editFinancial.equipmentCost + editFinancial.transportCost + editFinancial.miscCost;
-      
+
       await updateReport(currentReport._id, {
-        progress: { 
-          ...currentReport.progress, 
-          percentageComplete: editProgress, 
-          status: editStatus 
+        progress: {
+          ...currentReport.progress,
+          percentageComplete: editProgress,
+          status: editStatus
         },
         financial: {
           ...editFinancial,
@@ -152,13 +176,33 @@ const ReportsPage: React.FC = () => {
 
   const handleSubmitReport = async () => {
     if (!currentReport) return;
+    if (!confirm("Are you sure you want to submit this report? It will be locked for review.")) return;
     try {
-      await submitReport(currentReport._id);
+      await submitReport(currentReport._id, "Submitted from Web Dashboard");
       await loadCurrentReport();
-      alert('Report submitted for approval');
     } catch (err) {
       console.error('Error submitting report:', err);
     }
+  };
+
+  const handleApproveReport = async () => {
+    if (!currentReport) return;
+    try {
+      await approveReport(currentReport._id, controlComment);
+      setControlAction(null);
+      setControlComment('');
+      await loadCurrentReport();
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRejectReport = async () => {
+    if (!currentReport) return;
+    try {
+      await rejectReport(currentReport._id, controlComment);
+      setControlAction(null);
+      setControlComment('');
+      await loadCurrentReport();
+    } catch (err) { console.error(err); }
   };
 
   // Form handlers
@@ -271,25 +315,25 @@ const ReportsPage: React.FC = () => {
   const exportReportToPDF = (report: Report) => {
     const doc = new jsPDF();
     const projectName = typeof report.project === 'object' ? report.project.name : report.projectName;
-    
+
     // Header
     doc.setFontSize(18);
     doc.setTextColor(30, 41, 59);
     doc.text('WEEKLY SITE REPORT', 105, 15, { align: 'center' });
-    
+
     doc.setFontSize(12);
     doc.setTextColor(71, 85, 105);
     doc.text(projectName, 105, 24, { align: 'center' });
     doc.text(`Week ${report.weekNumber}, ${report.year} | ${formatDate(report.weekStartDate)} - ${formatDate(report.weekEndDate)}`, 105, 31, { align: 'center' });
-    
+
     let y = 42;
-    
+
     // Progress & Status
     doc.setFontSize(11);
     doc.setTextColor(30, 41, 59);
     doc.text('PROGRESS & STATUS', 14, y);
     y += 6;
-    
+
     autoTable(doc, {
       startY: y,
       head: [['Metric', 'Value']],
@@ -303,16 +347,16 @@ const ReportsPage: React.FC = () => {
       styles: { fontSize: 9 },
       columnStyles: { 0: { cellWidth: 50 } },
     });
-    
+
     y = (doc as any).lastAutoTable.finalY + 10;
-    
+
     // Financial Summary
     doc.text('FINANCIAL SUMMARY', 14, y);
     y += 6;
-    
-    const totalExpense = (report.financial?.labourCost || 0) + (report.financial?.materialCost || 0) + 
+
+    const totalExpense = (report.financial?.labourCost || 0) + (report.financial?.materialCost || 0) +
       (report.financial?.equipmentCost || 0) + (report.financial?.transportCost || 0);
-    
+
     autoTable(doc, {
       startY: y,
       head: [['Category', 'Amount']],
@@ -329,20 +373,20 @@ const ReportsPage: React.FC = () => {
       headStyles: { fillColor: [16, 185, 129], fontSize: 9 },
       styles: { fontSize: 9 },
     });
-    
+
     y = (doc as any).lastAutoTable.finalY + 10;
-    
+
     // Labour Summary
     if (report.labour?.details?.length > 0) {
       doc.text('LABOUR LOG', 14, y);
       y += 6;
-      
+
       autoTable(doc, {
         startY: y,
         head: [['Date', 'Workers', 'Skilled', 'Unskilled', 'Description']],
         body: report.labour.details.map(l => [
-          formatDate(l.date), 
-          String(l.workers), 
+          formatDate(l.date),
+          String(l.workers),
           String(l.skilled || 0),
           String(l.unskilled || 0),
           l.description || '-'
@@ -353,12 +397,12 @@ const ReportsPage: React.FC = () => {
       });
       y = (doc as any).lastAutoTable.finalY + 10;
     }
-    
+
     // Materials
     if (report.materials?.items?.length > 0 && y < 230) {
       doc.text('MATERIALS RECEIVED', 14, y);
       y += 6;
-      
+
       autoTable(doc, {
         startY: y,
         head: [['Material', 'Qty', 'Unit', 'Cost']],
@@ -369,12 +413,12 @@ const ReportsPage: React.FC = () => {
       });
       y = (doc as any).lastAutoTable.finalY + 10;
     }
-    
+
     // Work Completed
     if (report.workCompleted?.length > 0 && y < 250) {
       doc.text('WORK COMPLETED', 14, y);
       y += 6;
-      
+
       autoTable(doc, {
         startY: y,
         head: [['Task', 'Location', 'Quantity']],
@@ -384,14 +428,14 @@ const ReportsPage: React.FC = () => {
         styles: { fontSize: 8 },
       });
     }
-    
+
     // Safety
     if ((report.safety?.incidentCount || 0) > 0 || (report.safety?.nearMissCount || 0) > 0) {
       doc.addPage();
       y = 20;
       doc.text('SAFETY REPORT', 14, y);
       y += 6;
-      
+
       autoTable(doc, {
         startY: y,
         body: [
@@ -403,15 +447,15 @@ const ReportsPage: React.FC = () => {
         styles: { fontSize: 9 },
       });
     }
-    
+
     // Issues
     if (report.issues?.length > 0) {
       y = (doc as any).lastAutoTable?.finalY + 10 || y + 10;
       if (y > 250) { doc.addPage(); y = 20; }
-      
+
       doc.text('ISSUES & BLOCKERS', 14, y);
       y += 6;
-      
+
       autoTable(doc, {
         startY: y,
         head: [['Issue', 'Category', 'Severity', 'Status']],
@@ -421,7 +465,7 @@ const ReportsPage: React.FC = () => {
         styles: { fontSize: 8 },
       });
     }
-    
+
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
@@ -430,13 +474,15 @@ const ReportsPage: React.FC = () => {
       doc.setPage(i);
       doc.text(`Generated: ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
     }
-    
+
     doc.save(`SiteReport_${projectName.replace(/\s+/g, '_')}_Week${report.weekNumber}_${report.year}.pdf`);
   };
 
   // Tabs configuration
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
-    { id: 'overview', label: 'Overview', icon: <Eye className="h-4 w-4" /> },
+    { id: 'dashboard', label: 'Dashboard', icon: <TrendingUp className="h-4 w-4" /> },
+    { id: 'overview', label: 'Editor', icon: <Eye className="h-4 w-4" /> },
+    { id: 'budget', label: 'Budget Analysis', icon: <DollarSign className="h-4 w-4" /> },
     { id: 'labour', label: 'Labour', icon: <Users className="h-4 w-4" /> },
     { id: 'materials', label: 'Materials', icon: <Package className="h-4 w-4" /> },
     { id: 'equipment', label: 'Equipment', icon: <Truck className="h-4 w-4" /> },
@@ -444,7 +490,6 @@ const ReportsPage: React.FC = () => {
     { id: 'quality', label: 'Quality', icon: <ClipboardCheck className="h-4 w-4" /> },
     { id: 'issues', label: 'Issues', icon: <AlertTriangle className="h-4 w-4" /> },
     { id: 'history', label: 'History', icon: <Clock className="h-4 w-4" /> },
-    { id: 'summary', label: 'Summary', icon: <Briefcase className="h-4 w-4" /> },
   ];
 
   if (loading) {
@@ -460,20 +505,58 @@ const ReportsPage: React.FC = () => {
 
   return (
     <div className="max-w-[1800px] space-y-6">
-      <PageHeader title="Weekly Site Reports" subtitle="Construction progress tracking & documentation">
+      <PageHeader title="Enterprise Reporting" subtitle="Site progress, financials, and approvals">
         <div className="flex items-center gap-3">
-          {currentReport && currentReport.status === 'draft' && (
-            <button onClick={handleSubmitReport} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-              <Send className="h-4 w-4" /> Submit
-            </button>
-          )}
+          {/* Action Buttons based on Role & Status */}
           {currentReport && (
-            <button onClick={() => exportReportToPDF(currentReport)} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">
-              <Download className="h-4 w-4" /> Export PDF
-            </button>
+            <>
+              {(currentReport.status === 'draft' || currentReport.status === 'revision-required') && (
+                <button onClick={handleSubmitReport} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+                  <Send className="h-4 w-4" /> Submit for Review
+                </button>
+              )}
+
+              {isManager && currentReport.status === 'submitted' && (
+                <div className="flex gap-2">
+                  <button onClick={() => setControlAction('approve')} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
+                    <CheckCircle className="h-4 w-4" /> Approve
+                  </button>
+                  <button onClick={() => setControlAction('reject')} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">
+                    <AlertCircle className="h-4 w-4" /> Reject
+                  </button>
+                </div>
+              )}
+
+              <button onClick={() => exportReportToPDF(currentReport)} className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium">
+                <Download className="h-4 w-4" /> PDF
+              </button>
+            </>
           )}
         </div>
       </PageHeader>
+
+      {controlAction && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4 capitalize">{controlAction} Report</h3>
+            <textarea
+              value={controlComment}
+              onChange={e => setControlComment(e.target.value)}
+              placeholder={controlAction === 'reject' ? "Reason for rejection (required)..." : "Approval comments (optional)..."}
+              className="w-full h-32 bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-200 mb-4 focus:outline-none focus:border-primary-500"
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setControlAction(null)} className="px-4 py-2 text-slate-400 hover:text-white">Cancel</button>
+              <button
+                onClick={controlAction === 'approve' ? handleApproveReport : handleRejectReport}
+                className={`px-4 py-2 rounded-lg text-white ${controlAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+              >
+                Confirm {controlAction}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Project Selector */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -483,12 +566,15 @@ const ReportsPage: React.FC = () => {
             {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
           </select>
           {currentReport && (
-            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${currentReport.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : currentReport.status === 'submitted' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-600 text-slate-400'}`}>
-              {currentReport.status?.toUpperCase()}
+            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${currentReport.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+              currentReport.status === 'submitted' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                currentReport.status === 'modified' || currentReport.status === 'revision-required' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                  'bg-slate-600 text-slate-300'}`}>
+              {currentReport.workflow?.currentStep?.replace(/_/g, ' ').toUpperCase() || currentReport.status?.toUpperCase()}
             </span>
           )}
         </div>
-        
+
         {/* Tabs */}
         <div className="flex flex-wrap gap-1 bg-slate-800/50 p-1 rounded-xl border border-slate-700">
           {tabs.map(tab => (
@@ -520,6 +606,161 @@ const ReportsPage: React.FC = () => {
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DASHBOARD TAB (NEW) */}
+      {activeTab === 'dashboard' && (
+        <div className="space-y-6">
+          {/* Top Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Budget Variance */}
+            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+              <h3 className="text-slate-400 text-sm font-medium mb-2">Budget Variance</h3>
+              {budgetAnalysis ? (
+                <div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {formatCurrency(
+                      Object.values(budgetAnalysis.variance).reduce((a, b) => a + b, 0)
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">Positive means under budget</p>
+                  <div className="mt-4 space-y-2">
+                    {Object.entries(budgetAnalysis.variance).map(([key, val]) => (
+                      <div key={key} className="flex justify-between text-sm">
+                        <span className="text-slate-300">{key}</span>
+                        <span className={val >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                          {val >= 0 ? '+' : ''}{formatCurrency(val)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : <p className="text-slate-500">No budget data available</p>}
+            </div>
+
+            {/* Risk Matrix */}
+            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+              <h3 className="text-slate-400 text-sm font-medium mb-2">Project Risks</h3>
+              {riskMatrix ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Open Issues</span>
+                    <span className="bg-slate-700 px-2 py-1 rounded text-white text-sm">{riskMatrix.openIssues}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Critical Issues</span>
+                    <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-sm">{riskMatrix.criticalIssues}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Safety Incidents</span>
+                    <span className="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-sm">{riskMatrix.safetyIncidents}</span>
+                  </div>
+                </div>
+              ) : <p className="text-slate-500">No risk data available</p>}
+            </div>
+
+            {/* Pending Approvals */}
+            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+              <h3 className="text-slate-400 text-sm font-medium mb-2">Action Items</h3>
+              <div className="space-y-3">
+                {currentReport?.status === 'draft' && (
+                  <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                    <p className="text-blue-400 text-sm font-medium">Draft Pending Submission</p>
+                    <p className="text-blue-300/60 text-xs">Week {currentReport.weekNumber}</p>
+                  </div>
+                )}
+                {currentReport?.status === 'submitted' && isManager && (
+                  <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 flex justify-between items-center">
+                    <div>
+                      <p className="text-amber-400 text-sm font-medium">Review Required</p>
+                      <p className="text-amber-300/60 text-xs">Week {currentReport.weekNumber}</p>
+                    </div>
+                    <button onClick={() => setControlAction('approve')} className="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs rounded transition-colors">Review</button>
+                  </div>
+                )}
+                {!currentReport && <p className="text-slate-500 text-sm">No active tasks.</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Reports List */}
+          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div className="p-4 border-b border-slate-700">
+              <h3 className="text-lg font-bold text-white">Report History</h3>
+            </div>
+            <table className="w-full text-sm">
+              <thead className="bg-slate-700/50 text-slate-400">
+                <tr>
+                  <th className="px-4 py-3 text-left">Week</th>
+                  <th className="px-4 py-3 text-left">Generated</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Progress</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700">
+                {allReports.map(r => (
+                  <tr key={r._id} className="hover:bg-slate-700/30">
+                    <td className="px-4 py-3 text-white">Week {r.weekNumber}, {r.year}</td>
+                    <td className="px-4 py-3 text-slate-400">{new Date(r.generatedAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded text-xs ${r.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
+                        r.status === 'submitted' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-slate-600 text-slate-300'
+                        }`}>
+                        {r.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-white">{r.progress?.percentageComplete}%</td>
+                    <td className="px-4 py-3 text-right">
+                      <button onClick={() => { setCurrentReport(r); setActiveTab('overview'); }} className="text-primary-400 hover:text-primary-300 mr-3">View</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* BUDGET TAB */}
+      {activeTab === 'budget' && budgetAnalysis && (
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+          <h3 className="text-xl font-bold text-white mb-6">Budget vs Actual Analysis</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {['Labour', 'Material', 'Equipment', 'Other'].map(cat => {
+              const data = (budgetAnalysis.comparison as any)[cat];
+              const variance = (budgetAnalysis.variance as any)[cat];
+              const percent = data.budget > 0 ? (data.actual / data.budget) * 100 : 0;
+
+              return (
+                <div key={cat} className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h4 className="text-slate-300 font-medium">{cat}</h4>
+                      <p className="text-xs text-slate-500">Budget: {formatCurrency(data.budget)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-bold ${variance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatCurrency(data.actual)}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {percent.toFixed(1)}% used
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${percent > 100 ? 'bg-red-500' : percent > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(percent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

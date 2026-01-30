@@ -11,6 +11,9 @@ export interface Project {
   status: 'ongoing' | 'completed' | 'upcoming';
   team?: string[];
   image?: string;
+  images?: string[];
+  videoUrl?: string;
+  notes?: string;
   location?: string;
   clientName?: string;
   documents?: string[];
@@ -20,58 +23,52 @@ export interface Project {
 }
 
 const getToken = () => localStorage.getItem('token');
-const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/project';
+const API_BASE_URL = 'http://localhost:3000/project';
 
 export const getAllProjects = async (): Promise<Project[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/all`, {
+    const response = await axios.get(`${API_BASE_URL}/`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     return response.data;
   } catch (error) {
     console.error('Error fetching all projects:', error);
-    try {
-      const [pending, completed] = await Promise.all([getPendingProjects(), getCompletedProjects()]);
-      return [...pending, ...completed];
-    } catch (fallbackError) {
-      console.error('Error fetching projects fallback:', fallbackError);
-      return [];
-    }
+    return [];
   }
 };
 
 export const getPendingProjects = async (): Promise<Project[]> => {
-  const response = await axios.get(`${API_BASE_URL}/pending`, {
+  const response = await axios.get(`${API_BASE_URL}/?status=upcoming`, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   return response.data;
 };
 
 export const getCompletedProjects = async (): Promise<Project[]> => {
-  const response = await axios.get(`${API_BASE_URL}/completed`, {
+  const response = await axios.get(`${API_BASE_URL}/?status=completed`, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   return response.data;
 };
 
 export const completeProject = async (id: string): Promise<void> => {
-  await axios.put(`${API_BASE_URL}/complete/${id}`, {}, {
+  await axios.put(`${API_BASE_URL}/${id}`, { status: 'completed' }, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
 };
 
 export const addProject = async (project: Omit<Project, '_id'>): Promise<Project> => {
-  const response = await axios.post(`${API_BASE_URL}/add`, project, {
+  const response = await axios.post(`${API_BASE_URL}/`, project, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
-  return response.data.project;
+  return response.data; // Backend returns the object directly
 };
 
 export const updateProject = async (id: string, data: Partial<Project>): Promise<Project> => {
-  const response = await axios.put(`${API_BASE_URL}/update/${id}`, data, {
+  const response = await axios.put(`${API_BASE_URL}/${id}`, data, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
-  return response.data.project;
+  return response.data;
 };
 
 export const deleteProject = async (id: string): Promise<void> => {

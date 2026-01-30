@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, RefreshCw, Clock } from 'lucide-react';
+import { User, RefreshCw, Clock, Plus } from 'lucide-react';
 import QuickStats from '../component/QuickStats';
 import ProjectStatus from '../component/ProjectStatus';
 import TaskOverview from '../component/TaskOverview';
@@ -10,10 +10,10 @@ import Notifications from '../component/Notifications';
 import CreateProjectButton from '../component/CreateProjectButton';
 import RealTimeAlerts from '../component/RealTimeAlerts';
 import AnalyticsDashboard from '../component/AnalyticsDashboard';
-import PageHeader from '../component/PageHeader';
 import { getAllProjects } from '../../api/projects';
 import { getAllResources } from '../../api/resources';
 import { getAllTeamMembers } from '../../api/teammember';
+import Button from '../../components/ui/Button';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -59,55 +59,59 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-[1600px]">
-      <PageHeader
-        title="Dashboard"
-        subtitle={
-          <span className="flex items-center gap-2 text-slate-400">
-            <Clock className="h-4 w-4" />
-            Last updated: {dashboardData.lastUpdated.toLocaleTimeString()}
-            {dashboardData.loading && (
-              <RefreshCw className="h-4 w-4 animate-spin text-primary-400" />
-            )}
-          </span>
-        }
-      >
-        <button
-          onClick={loadDashboardData}
-          disabled={dashboardData.loading}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${dashboardData.loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
-        <button
-          onClick={() => navigate('/profile')}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700"
-        >
-          <User className="h-4 w-4" />
-          Profile
-        </button>
-        <CreateProjectButton />
-      </PageHeader>
-
-      <div className="space-y-6">
-        <RealTimeAlerts />
-        <QuickStats />
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <ProjectStatus />
-          </div>
-          <div>
-            <TaskOverview />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Overview</h1>
+          <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+            <Clock className="w-3.5 h-3.5" />
+            <span>Updated {dashboardData.lastUpdated.toLocaleTimeString()}</span>
           </div>
         </div>
-        <AnalyticsDashboard />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BudgetUtilization />
-          <div className="space-y-6">
-            <RecentActivity />
-            <Notifications />
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadDashboardData}
+            isLoading={dashboardData.loading}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${dashboardData.loading ? 'animate-spin' : ''}`} />}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate('/profile')}
+            leftIcon={<User className="w-3.5 h-3.5" />}
+          >
+            Profile
+          </Button>
+          {/* Create Project Button Wrapper to match style if possible, or keep as is */}
+          <div className="inline-block">
+            <CreateProjectButton />
           </div>
+        </div>
+      </div>
+
+      <RealTimeAlerts />
+
+      {/* Stats Grid */}
+      <QuickStats />
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <ProjectStatus />
+          <AnalyticsDashboard />
+          <BudgetUtilization />
+        </div>
+
+        <div className="space-y-6">
+          <TaskOverview />
+          <RecentActivity />
+          <Notifications />
         </div>
       </div>
     </div>

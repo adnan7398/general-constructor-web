@@ -1,96 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Light Mode Only - Clean and Modern */
-:root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
-  --border-color: #e2e8f0;
-  --border-hover: #cbd5e1;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-/* Base Styles */
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Compact Mode */
-.compact .p-6 { padding: 1rem; }
-.compact .p-8 { padding: 1.5rem; }
-.compact .space-y-6 > * + * { margin-top: 1rem; }
-.compact .space-y-8 > * + * { margin-top: 1.5rem; }
-
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-  
   body {
-    @apply font-body text-accent-800 bg-white;
+    @apply antialiased text-gray-900 bg-gray-50 font-sans selection:bg-amber-500 selection:text-white;
+    font-family: 'Inter', sans-serif;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-bold;
-  }
-  
-  h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl leading-tight;
-  }
-  
-  h2 {
-    @apply text-3xl md:text-4xl leading-snug mb-6;
-  }
-  
-  h3 {
-    @apply text-2xl md:text-3xl leading-snug mb-4;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Poppins', sans-serif;
   }
 }
 
-@layer components {
-  .container {
-    @apply px-4 mx-auto max-w-7xl;
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  .section {
-    @apply py-16 md:py-24;
+
+  .delay-100 {
+    animation-delay: 0.1s;
   }
-  
-  .btn {
-    @apply inline-flex items-center justify-center px-6 py-3 rounded-md font-medium transition-all duration-300 transform;
+
+  .delay-200 {
+    animation-delay: 0.2s;
   }
-  
-  .btn-primary {
-    @apply btn bg-primary-500 text-white hover:bg-primary-600 hover:-translate-y-1;
+
+  .delay-300 {
+    animation-delay: 0.3s;
   }
-  
-  .btn-secondary {
-    @apply btn bg-secondary-500 text-white hover:bg-secondary-600 hover:-translate-y-1;
+
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  
-  .btn-outline {
-    @apply btn border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white hover:-translate-y-1;
-  }
-  
-  .card {
-    @apply bg-white rounded-lg shadow-card p-6 transition-all duration-300 hover:shadow-card-hover;
-  }
-  
-  .input {
-    @apply w-full px-4 py-2 border border-accent-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500;
-  }
+}
+
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
 }

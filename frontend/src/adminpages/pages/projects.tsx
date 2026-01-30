@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Building, Check, Clock, Search, Globe, Upload, Trash2, Eye, EyeOff, Image as ImageIcon, X, GripVertical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, Check, Globe, Search, Upload, EyeOff, X, MapPin, Filter, Plus } from 'lucide-react';
 import {
   Project,
   getPendingProjects,
@@ -12,7 +12,10 @@ import {
   deleteProject,
 } from '../../api/projects';
 import CreateProjectButton from '../component/CreateProjectButton';
-import PageHeader from '../component/PageHeader';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
+import Input from '../../components/ui/Input';
 
 const API_BASE = 'https://general-constructor-web-2.onrender.com';
 
@@ -22,15 +25,9 @@ const Projects: React.FC = () => {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadProjects();
-    loadAllProjects();
-  }, [activeTab]);
-
+  // Load data
   const loadProjects = async () => {
     setLoading(true);
     try {
@@ -52,59 +49,48 @@ const Projects: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    loadProjects();
+    loadAllProjects();
+  }, [activeTab]);
+
+  // Handlers
   const handleCompleteProject = async (id: string) => {
-    try {
-      await completeProject(id);
-      await loadProjects();
-      await loadAllProjects();
-    } catch (error) {
-      console.error('Error completing project:', error);
-    }
+    if (!confirm('Mark project as completed?')) return;
+    await completeProject(id);
+    loadProjects();
+    loadAllProjects();
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) return;
+    await deleteProject(id);
+    loadProjects();
+    loadAllProjects();
   };
 
   const handleToggleShowcase = async (id: string) => {
-    try {
-      await toggleShowcase(id);
-      await loadAllProjects();
-    } catch (error) {
-      console.error('Error toggling showcase:', error);
-    }
+    await toggleShowcase(id);
+    loadAllProjects();
   };
 
   const handleImageUpload = async (id: string, file: File) => {
-    setUploadingId(id);
     try {
       await uploadProjectImage(id, file);
       await loadAllProjects();
     } catch (error) {
-      console.error('Error uploading image:', error);
       alert('Failed to upload image');
-    } finally {
-      setUploadingId(null);
     }
   };
 
-  const handleDeleteProject = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-    try {
-      await deleteProject(id);
-      await loadProjects();
-      await loadAllProjects();
-    } catch (error) {
-      console.error('Error deleting project:', error);
-    }
+  const handleUpdateProject = async (id: string) => {
+    if (!editingProject) return;
+    await updateProject(id, editingProject);
+    loadAllProjects();
+    setEditingProject(null);
   };
 
-  const handleUpdateProject = async (id: string, data: Partial<Project>) => {
-    try {
-      await updateProject(id, data);
-      await loadAllProjects();
-      setEditingProject(null);
-    } catch (error) {
-      console.error('Error updating project:', error);
-    }
-  };
-
+  // Utils
   const filteredProjects = projects.filter(
     (p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -112,217 +98,197 @@ const Projects: React.FC = () => {
   const showcaseProjects = allProjects.filter((p) => p.showOnWebsite).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   const availableForShowcase = allProjects.filter((p) => !p.showOnWebsite);
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
 
   const getImageUrl = (img?: string) => {
-    if (!img || img.includes('via.placeholder.com')) return 'https://placehold.co/300x200/1e293b/94a3b8?text=No+Image';
+    if (!img || img.includes('via.placeholder.com')) return 'https://placehold.co/600x400/f3f4f6/9ca3af?text=No+Image';
     if (img.startsWith('http')) return img;
     return `${API_BASE}${img}`;
   };
 
   return (
-    <div className="max-w-[1600px] space-y-6">
-      <PageHeader title="Projects" subtitle="View and manage construction projects.">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Projects</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage construction projects and portfolio.</p>
+        </div>
         <CreateProjectButton />
-      </PageHeader>
-
-      {/* Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'pending' ? 'bg-primary-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'}`}
-        >
-          <Clock className="h-4 w-4" /> Pending
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'completed' ? 'bg-primary-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'}`}
-        >
-          <Check className="h-4 w-4" /> Completed
-        </button>
-        <button
-          onClick={() => setActiveTab('showcase')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'showcase' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'}`}
-        >
-          <Globe className="h-4 w-4" /> Website Showcase
-        </button>
       </div>
 
-      {/* Showcase Tab */}
-      {activeTab === 'showcase' ? (
-        <div className="space-y-6">
-          {/* Current showcase projects */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-            <div className="p-5 border-b border-slate-700">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/20 rounded-lg">
-                  <Globe className="h-5 w-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-100">Projects on Website</h2>
-                  <p className="text-sm text-slate-400">These projects are visible to clients on your landing page</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-5">
-              {showcaseProjects.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <Globe className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No projects added to website showcase yet</p>
-                  <p className="text-sm mt-1">Add projects from the list below</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {showcaseProjects.map((project) => (
-                    <div key={project._id} className="bg-slate-700/50 rounded-xl border border-slate-600 overflow-hidden group">
-                      <div className="relative aspect-video bg-slate-800">
-                        <img src={getImageUrl(project.image)} alt={project.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <label className="p-2 bg-slate-800 rounded-lg cursor-pointer hover:bg-slate-700" title="Upload image">
-                            <Upload className="h-5 w-5 text-slate-300" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleImageUpload(project._id, file);
-                              }}
-                            />
-                          </label>
-                          <button onClick={() => handleToggleShowcase(project._id)} className="p-2 bg-red-600 rounded-lg hover:bg-red-700" title="Remove from showcase">
-                            <EyeOff className="h-5 w-5 text-white" />
-                          </button>
-                        </div>
-                        {uploadingId === project._id && (
-                          <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center">
-                            <div className="h-8 w-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        )}
-                        <div className="absolute top-2 right-2">
-                          <span className="px-2 py-1 text-xs font-medium rounded bg-emerald-500 text-white">Live</span>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-slate-100 truncate">{project.name}</h3>
-                        <p className="text-sm text-slate-400 truncate mt-1">{project.description || 'No description'}</p>
-                        <div className="flex items-center justify-between mt-3">
-                          <span className="text-xs px-2 py-1 rounded bg-slate-600 text-slate-300">{project.projectType}</span>
-                          <button onClick={() => setEditingProject(project)} className="text-xs text-primary-400 hover:text-primary-300">
-                            Edit Details
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+          {[
+            { id: 'pending', label: 'In Progress', icon: Clock },
+            { id: 'completed', label: 'Completed', icon: Check },
+            { id: 'showcase', label: 'Website Showcase', icon: Globe },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`
+                flex items-center gap-2 py-4 px-1 border-b-2 text-sm font-medium transition-colors
+                ${activeTab === tab.id
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+              `}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-          {/* Available projects to add */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-            <div className="p-5 border-b border-slate-700">
-              <h2 className="text-lg font-semibold text-slate-100">Add Projects to Website</h2>
-              <p className="text-sm text-slate-400 mt-1">Select projects to display on your public website</p>
+      {/* Content */}
+      {activeTab === 'showcase' ? (
+        <div className="space-y-8">
+          {/* Live Projects Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Live on Website ({showcaseProjects.length})</h3>
             </div>
-            <div className="p-5">
-              {availableForShowcase.length === 0 ? (
-                <p className="text-center py-8 text-slate-500">All projects are already on the website</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {availableForShowcase.map((project) => (
-                    <div key={project._id} className="bg-slate-700/30 rounded-xl border border-slate-600 p-4 hover:border-slate-500 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className="w-16 h-16 rounded-lg bg-slate-700 overflow-hidden flex-shrink-0">
-                          <img src={getImageUrl(project.image)} alt={project.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-slate-200 truncate">{project.name}</h3>
-                          <p className="text-xs text-slate-400 mt-0.5">{project.projectType}</p>
-                          <p className="text-xs text-slate-500 mt-1">{project.status}</p>
-                        </div>
+
+            {showcaseProjects.length === 0 ? (
+              <Card className="flex flex-col items-center justify-center p-12 text-center text-gray-500 border-dashed">
+                <Globe className="w-12 h-12 mb-3 text-gray-300" />
+                <p>No projects visible on website.</p>
+                <p className="text-sm">Select projects from below to showcase them.</p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {showcaseProjects.map((project) => (
+                  <Card key={project._id} noPadding className="overflow-hidden group">
+                    <div className="relative aspect-video bg-gray-100">
+                      <img src={getImageUrl(project.images?.[0] || project.image)} alt={project.name} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <label className="p-2 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer text-white backdrop-blur-sm transition-colors">
+                          <Upload className="w-5 h-5" />
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageUpload(project._id, file);
+                          }} />
+                        </label>
+                        <button onClick={() => handleToggleShowcase(project._id)} className="p-2 bg-white/10 hover:bg-red-500/80 rounded-lg text-white backdrop-blur-sm transition-colors">
+                          <EyeOff className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleToggleShowcase(project._id)}
-                        className="mt-3 w-full py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2"
-                      >
-                        <Eye className="h-4 w-4" /> Add to Website
-                      </button>
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="success" size="sm" className="shadow-sm">Live</Badge>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="p-4">
+                      <h4 className="font-semibold text-gray-900 truncate">{project.name}</h4>
+                      <p className="text-xs text-gray-500 mt-1 capitalize">{project.projectType} • {project.status}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Available Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Available for Showcase</h3>
+              <span className="text-xs text-gray-500">Showing {availableForShowcase.length} projects</span>
             </div>
-          </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {availableForShowcase.map((project) => (
+                <div key={project._id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all">
+                  <div className="w-12 h-12 rounded-md bg-gray-100 overflow-hidden shrink-0">
+                    <img src={getImageUrl(project.images?.[0] || project.image)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">{project.name}</h4>
+                    <p className="text-xs text-gray-500 capitalize">{project.projectType}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => handleToggleShowcase(project._id)} title="Add to Showcase">
+                    <Plus className="w-4 h-4 text-gray-400 hover:text-gray-900" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       ) : (
-        /* Pending/Completed Tab */
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-slate-700">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+        /* List View for Pending/Completed */
+        <Card className="flex flex-col" noPadding>
+          {/* Toolbar */}
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search projects..."
+                placeholder="Search projects by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-600 bg-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 transition-all"
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
+                Filter
+              </Button>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-700">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-700/50">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Project</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Start Date</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Budget</th>
-                  <th className="px-5 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">Website</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+                <tr className="bg-gray-50/50 border-b border-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3">Project</th>
+                  <th className="px-6 py-3">Type</th>
+                  <th className="px-6 py-3">Timeline</th>
+                  <th className="px-6 py-3">Budget</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700">
+              <tbody className="bg-white divide-y divide-gray-50">
                 {loading ? (
-                  <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">Loading projects...</td></tr>
+                  <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Loading...</td></tr>
                 ) : filteredProjects.length === 0 ? (
-                  <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">No projects found</td></tr>
+                  <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No projects found matching your search.</td></tr>
                 ) : (
                   filteredProjects.map((project) => (
-                    <tr key={project._id} className="hover:bg-slate-700/30">
-                      <td className="px-5 py-4">
+                    <tr key={project._id} className="hover:bg-gray-50/80 transition-colors group">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg overflow-hidden flex-shrink-0 bg-slate-700">
-                            <img src={getImageUrl(project.image)} alt="" className="w-full h-full object-cover" />
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-100">
+                            <img src={getImageUrl(project.images?.[0] || project.image)} alt="" className="w-full h-full object-cover" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-slate-100">{project.name}</p>
-                            {project.description && <p className="text-xs text-slate-400 truncate max-w-[200px]">{project.description}</p>}
+                            <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{project.name}</div>
+                            {project.location && (
+                              <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                {project.location}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded-md bg-slate-600 text-slate-200">{project.projectType || 'N/A'}</span>
+                      <td className="px-6 py-4">
+                        <Badge variant="neutral" className="capitalize">{project.projectType}</Badge>
                       </td>
-                      <td className="px-5 py-4 text-sm text-slate-300">{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}</td>
-                      <td className="px-5 py-4 text-sm text-slate-300">{project.budget ? formatCurrency(project.budget) : 'N/A'}</td>
-                      <td className="px-5 py-4 text-center">
-                        <button onClick={() => handleToggleShowcase(project._id)} className={`p-1.5 rounded-lg ${project.showOnWebsite ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600 text-slate-400'}`}>
-                          {project.showOnWebsite ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                        </button>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col text-sm">
+                          <span className="text-gray-900">{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'TBD'}</span>
+                          <span className="text-xs text-gray-500">Start Date</span>
+                        </div>
                       </td>
-                      <td className="px-5 py-4 text-right space-x-2">
-                        {activeTab === 'pending' && (
-                          <button onClick={() => handleCompleteProject(project._id)} className="text-sm font-medium text-primary-400 hover:text-primary-300">
-                            Complete
-                          </button>
-                        )}
-                        <button onClick={() => handleDeleteProject(project._id)} className="text-sm font-medium text-red-400 hover:text-red-300">
-                          Delete
-                        </button>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        {project.budget ? formatCurrency(project.budget) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingProject(project)}>Edit</Button>
+                          {activeTab === 'pending' && <Button variant="ghost" size="sm" onClick={() => handleCompleteProject(project._id)}>Complete</Button>}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -330,85 +296,59 @@ const Projects: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Edit Project Modal */}
+      {/* Edit Modal (Simplified) */}
       {editingProject && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-lg">
-            <div className="p-5 border-b border-slate-700 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-slate-100">Edit Project</h3>
-              <button onClick={() => setEditingProject(null)} className="p-2 hover:bg-slate-700 rounded-lg text-slate-400">
-                <X className="h-5 w-5" />
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg shadow-2xl" noPadding>
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-semibold text-gray-900">Edit Project</h3>
+              <button onClick={() => setEditingProject(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-6 space-y-4">
+              <Input
+                label="Project Name"
+                value={editingProject.name}
+                onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+              />
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Project Name</label>
-                <input
-                  type="text"
-                  value={editingProject.name}
-                  onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                 <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-sm"
                   rows={3}
                   value={editingProject.description || ''}
                   onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Video URL</label>
+                <Input
+                  value={editingProject.videoUrl || ''}
+                  onChange={(e) => setEditingProject({ ...editingProject, videoUrl: e.target.value })}
+                  placeholder="e.g. YouTube/Vimeo link"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Project Type</label>
-                  <select
-                    value={editingProject.projectType}
-                    onChange={(e) => setEditingProject({ ...editingProject, projectType: e.target.value as Project['projectType'] })}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                  >
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="industrial">Industrial</option>
-                    <option value="infrastructure">Infrastructure</option>
-                    <option value="public">Public</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Display Order</label>
-                  <input
-                    type="number"
-                    value={editingProject.displayOrder || 0}
-                    onChange={(e) => setEditingProject({ ...editingProject, displayOrder: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Location</label>
-                <input
-                  type="text"
-                  value={editingProject.location || ''}
-                  onChange={(e) => setEditingProject({ ...editingProject, location: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                <Input
+                  label="Type"
+                  value={editingProject.projectType || ''}
+                  onChange={(e) => setEditingProject({ ...editingProject, projectType: e.target.value as Project['projectType'] })}
+                />
+                <Input
+                  label="Budget"
+                  type="number"
+                  value={editingProject.budget || ''}
+                  onChange={(e) => setEditingProject({ ...editingProject, budget: Number(e.target.value) })}
                 />
               </div>
             </div>
-            <div className="p-5 border-t border-slate-700 flex justify-end gap-3">
-              <button onClick={() => setEditingProject(null)} className="px-4 py-2 text-slate-300 hover:bg-slate-700 rounded-lg">
-                Cancel
-              </button>
-              <button
-                onClick={() => handleUpdateProject(editingProject._id, editingProject)}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg"
-              >
-                Save Changes
-              </button>
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setEditingProject(null)}>Cancel</Button>
+              <Button onClick={() => handleUpdateProject(editingProject._id)}>Save Changes</Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

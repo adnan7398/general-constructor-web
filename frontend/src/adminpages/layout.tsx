@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { useAppearance } from '../contexts/AppearanceContext';
-import Navbar from './layout/Navbar';
-import Sidebar from './layout/Sidebar';
+import Sidebar from '../components/layout/Sidebar';
+import Topbar from '../components/layout/Topbar';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { settings: appearanceSettings } = useAppearance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -16,12 +14,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className={`flex h-screen bg-slate-900 ${appearanceSettings.compactMode ? 'compact' : ''}`}>
+    <div className="flex h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Navbar toggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-900">
-          {children}
+        <Topbar toggleSidebar={toggleSidebar} />
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth">
+          <div className="max-w-7xl mx-auto h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

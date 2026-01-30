@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAppearance } from '../../contexts/AppearanceContext';
-import { 
-  Settings, 
-  Bell, 
-  Shield, 
-  Palette, 
-  Database, 
-  Users, 
-  FileText, 
+import {
+  Settings,
+  Bell,
+  Shield,
+  Palette,
+  Database,
   Globe,
   Save,
-  X,
-  Check,
   AlertTriangle,
   Eye,
   EyeOff,
   Download,
   Upload
 } from 'lucide-react';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Badge from '../../components/ui/Badge';
+import { getHeroContent, updateHeroContent, getTestimonials, createTestimonial, deleteTestimonial } from '../../api/website';
+import { Camera, Trash2, Plus } from 'lucide-react';
+
 
 interface SettingsData {
   notifications: {
@@ -89,20 +92,15 @@ export default function SettingsPage() {
     },
   });
 
-  const [loading, setLoading] = useState(false); // Start with false to show default settings
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = localStorage.getItem('token');
   const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/settings';
 
-  console.log('Settings component - Token:', token ? 'exists' : 'missing');
-  console.log('Settings component - Current settings:', settings);
-
-  // Fetch settings on component mount
   useEffect(() => {
     if (token) {
       fetchSettings();
     } else {
-      console.log('No token found, using default settings');
       setLoading(false);
     }
   }, [token]);
@@ -121,9 +119,7 @@ export default function SettingsPage() {
       }
 
       const data = await response.json();
-      console.log('Fetched settings:', data);
-      
-      // Ensure all settings categories exist with default values
+
       const defaultSettings = {
         notifications: {
           emailNotifications: true,
@@ -158,7 +154,6 @@ export default function SettingsPage() {
         },
       };
 
-      // Merge fetched data with defaults to ensure all properties exist
       const mergedSettings = {
         notifications: { ...defaultSettings.notifications, ...data.notifications },
         security: { ...defaultSettings.security, ...data.security },
@@ -195,7 +190,6 @@ export default function SettingsPage() {
       };
     });
 
-    // Apply appearance changes immediately
     if (category === 'appearance') {
       updateAppearance({ [setting]: value });
     }
@@ -218,8 +212,6 @@ export default function SettingsPage() {
         throw new Error(errorData.error || 'Failed to save settings');
       }
 
-      const data = await response.json();
-      console.log('Settings saved:', data);
       alert('Settings saved successfully!');
     } catch (error: any) {
       console.error('Error saving settings:', error);
@@ -238,7 +230,7 @@ export default function SettingsPage() {
       alert('Password must be at least 6 characters long!');
       return;
     }
-    
+
     try {
       const response = await fetch('https://general-constructor-web-2.onrender.com/profile/me/change-password', {
         method: 'PUT',
@@ -326,14 +318,81 @@ export default function SettingsPage() {
     { id: 'appearance', name: 'Appearance', icon: <Palette className="w-4 h-4" /> },
     { id: 'system', name: 'System', icon: <Database className="w-4 h-4" /> },
     { id: 'integrations', name: 'Integrations', icon: <Globe className="w-4 h-4" /> },
+    { id: 'website', name: 'Website Content', icon: <Globe className="w-4 h-4" /> },
   ];
+
+  // Website Content State
+  const [heroContent, setHeroContent] = useState<any>(null);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [newTestimonial, setNewTestimonial] = useState({ name: '', role: '', quote: '', rating: 5 });
+  const [heroLoading, setHeroLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'website') {
+      fetchWebsiteContent();
+    }
+  }, [activeTab]);
+
+  const fetchWebsiteContent = async () => {
+    try {
+      const hero = await getHeroContent();
+      const tests = await getTestimonials();
+      setHeroContent(hero || { tagline: '', subtext: '' });
+      setTestimonials(tests);
+    } catch (error) {
+      console.error('Failed to fetch website content', error);
+    }
+  };
+
+  const handleHeroUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setHeroLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('tagline', heroContent.tagline);
+      formData.append('subtext', heroContent.subtext);
+      // Note: Image handling would require a file input state, simplified for now
+      await updateHeroContent(formData);
+      alert('Hero content updated!');
+    } catch (error) {
+      alert('Failed to update hero content');
+    } finally {
+      setHeroLoading(false);
+    }
+  };
+
+  const handleAddTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append('name', newTestimonial.name);
+      formData.append('role', newTestimonial.role);
+      formData.append('quote', newTestimonial.quote);
+      formData.append('rating', newTestimonial.rating.toString());
+      await createTestimonial(formData);
+      setNewTestimonial({ name: '', role: '', quote: '', rating: 5 });
+      fetchWebsiteContent();
+    } catch (error) {
+      alert('Failed to add testimonial');
+    }
+  };
+
+  const handleDeleteTestimonial = async (id: string) => {
+    if (!confirm('Delete this testimonial?')) return;
+    try {
+      await deleteTestimonial(id);
+      fetchWebsiteContent();
+    } catch (error) {
+      alert('Failed to delete testimonial');
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading settings...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading settings...</p>
         </div>
       </div>
     );
@@ -341,645 +400,421 @@ export default function SettingsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchSettings}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Safety check to ensure settings exist
-  if (!settings || !settings.notifications || !settings.security || !settings.appearance || !settings.system || !settings.integrations) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Settings data is incomplete. Please refresh the page.</p>
-          <button 
-            onClick={fetchSettings}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
+          <Button onClick={fetchSettings} variant="primary">Retry</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-6xl mx-auto p-6 space-y-8">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                <Settings className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  Settings
-                </h1>
-                <p className="text-slate-600 mt-1">Configure your dashboard preferences and system settings</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={exportSettings}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200"
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 cursor-pointer">
-                <Upload className="w-4 h-4" />
-                Import
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={importSettings}
-                  className="hidden"
-                />
-              </label>
-              <button
-                onClick={handleResetSettings}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Reset
-              </button>
-              <button
-                onClick={handleSaveSettings}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                {isSaving ? 'Saving...' : 'Save All'}
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-6 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-500">Manage your workspace preferences</p>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-              <nav className="space-y-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                      activeTab === tab.id
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {tab.icon}
-                    <span className="font-medium">{tab.name}</span>
-                  </button>
-                ))}
-              </nav>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="sm" onClick={exportSettings} leftIcon={<Download className="w-4 h-4" />}>
+            Export
+          </Button>
+          <label className="cursor-pointer">
+            <div className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] border border-gray-200 text-gray-700 hover:bg-gray-50 focus:ring-gray-200 h-8 px-3 text-xs">
+              <Upload className="w-4 h-4 mr-2" />
+              Import
             </div>
-          </div>
+            <input type="file" accept=".json" onChange={importSettings} className="hidden" />
+          </label>
+          <Button variant="danger" size="sm" onClick={handleResetSettings} leftIcon={<AlertTriangle className="w-4 h-4" />}>
+            Reset
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSaveSettings} loading={isSaving} leftIcon={<Save className="w-4 h-4" />}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-              {/* Notifications Tab */}
-              {activeTab === 'notifications' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-slate-800 mb-6">Notification Preferences</h2>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Email Notifications</h3>
-                        <p className="text-slate-600 text-sm">Receive notifications via email</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.notifications.emailNotifications}
-                          onChange={(e) => handleSettingChange('notifications', 'emailNotifications', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Sidebar */}
+        <Card className="p-2 h-fit lg:col-span-1">
+          <nav className="space-y-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+              >
+                {tab.icon}
+                <span>{tab.name}</span>
+              </button>
+            ))}
+          </nav>
+        </Card>
 
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Push Notifications</h3>
-                        <p className="text-slate-600 text-sm">Receive browser push notifications</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.notifications.pushNotifications}
-                          onChange={(e) => handleSettingChange('notifications', 'pushNotifications', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Project Updates</h3>
-                        <p className="text-slate-600 text-sm">Get notified about project changes</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.notifications.projectUpdates}
-                          onChange={(e) => handleSettingChange('notifications', 'projectUpdates', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Task Assignments</h3>
-                        <p className="text-slate-600 text-sm">Notify when tasks are assigned to you</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.notifications.taskAssignments}
-                          onChange={(e) => handleSettingChange('notifications', 'taskAssignments', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Weekly Reports</h3>
-                        <p className="text-slate-600 text-sm">Receive weekly summary reports</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.notifications.weeklyReports}
-                          onChange={(e) => handleSettingChange('notifications', 'weeklyReports', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                  </div>
+        {/* Main Content */}
+        <Card className="lg:col-span-3">
+          <div className="space-y-6">
+            {/* Notifications Tab */}
+            {activeTab === 'notifications' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+                  <p className="text-sm text-gray-500">Manage how you receive notifications.</p>
                 </div>
-              )}
-
-              {/* Security Tab */}
-              {activeTab === 'security' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-slate-800 mb-6">Security Settings</h2>
-                  
-                  <div className="space-y-6">
-                    {/* Two Factor Authentication */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                <div className="space-y-4">
+                  {Object.entries(settings.notifications).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                       <div>
-                        <h3 className="font-semibold text-slate-800">Two-Factor Authentication</h3>
-                        <p className="text-slate-600 text-sm">Add an extra layer of security to your account</p>
+                        <h3 className="text-sm font-medium text-gray-900 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </h3>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={settings.security.twoFactorAuth}
-                          onChange={(e) => handleSettingChange('security', 'twoFactorAuth', e.target.checked)}
+                          checked={value as boolean}
+                          onChange={(e) => handleSettingChange('notifications', key, e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
                       </label>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                    {/* Session Timeout */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Session Timeout (minutes)</h3>
-                      <p className="text-slate-600 text-sm mb-3">Automatically log out after inactivity</p>
+            {/* Security Tab */}
+            {activeTab === 'security' && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Security</h2>
+                  <p className="text-sm text-gray-500">Manage your account security and password.</p>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Two-Factor Authentication</h3>
+                      <p className="text-xs text-gray-500">Add an extra layer of security</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.security.twoFactorAuth}
+                        onChange={(e) => handleSettingChange('security', 'twoFactorAuth', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
                       <select
                         value={settings.security.sessionTimeout}
                         onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
-                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 bg-white focus:border-blue-500 focus:outline-none"
+                        className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                       >
                         <option value={15}>15 minutes</option>
                         <option value={30}>30 minutes</option>
                         <option value={60}>1 hour</option>
                         <option value={120}>2 hours</option>
-                        <option value={480}>8 hours</option>
                       </select>
                     </div>
-
-                    {/* Password Expiry */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Password Expiry (days)</h3>
-                      <p className="text-slate-600 text-sm mb-3">Force password change after specified days</p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Password Expiry (days)</label>
                       <select
                         value={settings.security.passwordExpiry}
                         onChange={(e) => handleSettingChange('security', 'passwordExpiry', parseInt(e.target.value))}
-                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 bg-white focus:border-blue-500 focus:outline-none"
+                        className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                       >
                         <option value={30}>30 days</option>
-                        <option value={60}>60 days</option>
                         <option value={90}>90 days</option>
                         <option value={180}>6 months</option>
-                        <option value={365}>1 year</option>
                         <option value={0}>Never</option>
                       </select>
                     </div>
+                  </div>
 
-                    {/* Login Attempts */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Maximum Login Attempts</h3>
-                      <p className="text-slate-600 text-sm mb-3">Lock account after failed attempts</p>
-                      <select
-                        value={settings.security.loginAttempts}
-                        onChange={(e) => handleSettingChange('security', 'loginAttempts', parseInt(e.target.value))}
-                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 bg-white focus:border-blue-500 focus:outline-none"
-                      >
-                        <option value={3}>3 attempts</option>
-                        <option value={5}>5 attempts</option>
-                        <option value={10}>10 attempts</option>
-                        <option value={0}>No limit</option>
-                      </select>
-                    </div>
-
-                    {/* Change Password */}
-                    <div className="p-6 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200">
-                      <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-red-600" />
-                        Change Password
-                      </h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
-                          <div className="relative">
-                            <input
-                              type={showPassword ? 'text' : 'password'}
-                              value={currentPassword}
-                              onChange={(e) => setCurrentPassword(e.target.value)}
-                              className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 pr-10 focus:border-blue-500 focus:outline-none"
-                              placeholder="Enter current password"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
-                          <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
-                            placeholder="Enter new password"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
-                          <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
-                            placeholder="Confirm new password"
-                          />
-                        </div>
+                  <div className="pt-6 border-t border-gray-200">
+                    <h3 className="text-sm font-medium text-gray-900 mb-4">Change Password</h3>
+                    <div className="space-y-4 max-w-md">
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Current Password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                        />
                         <button
-                          onClick={handlePasswordChange}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
-                          <Shield className="w-4 h-4" />
-                          Change Password
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      <Input
+                        type="password"
+                        placeholder="New Password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Confirm New Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      <Button onClick={handlePasswordChange} variant="secondary">
+                        Update Password
+                      </Button>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Appearance Tab */}
-              {activeTab === 'appearance' && (
+            {/* Appearance Tab */}
+            {activeTab === 'appearance' && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Appearance</h2>
+                  <p className="text-sm text-gray-500">Customize the look and feel of your dashboard.</p>
+                </div>
+
                 <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-slate-800 mb-6">Appearance Settings</h2>
-                  
-                  {/* Live Preview */}
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-slate-800 mb-2">Live Preview</h3>
-                    <p className="text-slate-600 text-sm mb-3">See your changes in real-time</p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Current Theme:</span> 
-                        <span className="ml-2 capitalize text-blue-600">{appearanceSettings.theme}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Color Scheme:</span> 
-                        <span className="ml-2 capitalize text-blue-600">{appearanceSettings.colorScheme}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Sidebar:</span> 
-                        <span className="ml-2 text-blue-600">{appearanceSettings.sidebarCollapsed ? 'Collapsed' : 'Expanded'}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Mode:</span> 
-                        <span className="ml-2 text-blue-600">{appearanceSettings.compactMode ? 'Compact' : 'Normal'}</span>
-                      </div>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-medium text-gray-900">Theme Preference</span>
+                      <Badge variant="neutral">{appearanceSettings.theme}</Badge>
                     </div>
-                    
-                    {/* Quick Theme Toggle */}
-                    <div className="mt-4 pt-4 border-t border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-700">Quick Theme Toggle:</span>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleSettingChange('appearance', 'theme', 'light')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              appearanceSettings.theme === 'light'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    <div className="flex gap-2">
+                      {(['light', 'dark', 'auto'] as const).map((theme) => (
+                        <button
+                          key={theme}
+                          onClick={() => handleSettingChange('appearance', 'theme', theme)}
+                          className={`flex-1 py-2 text-sm font-medium rounded-md border transition-all ${appearanceSettings.theme === theme
+                            ? 'bg-white border-gray-900 text-gray-900 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-white hover:shadow-sm'
                             }`}
-                          >
-                            Light
-                          </button>
-                          <button
-                            onClick={() => handleSettingChange('appearance', 'theme', 'dark')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              appearanceSettings.theme === 'dark'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            Dark
-                          </button>
-                          <button
-                            onClick={() => handleSettingChange('appearance', 'theme', 'auto')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              appearanceSettings.theme === 'auto'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            Auto
-                          </button>
-                        </div>
-                      </div>
+                        >
+                          {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  
-                  <div className="space-y-6">
-                    {/* Theme */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Theme</h3>
-                      <p className="text-slate-600 text-sm mb-3">Choose your preferred color scheme</p>
-                      <div className="grid grid-cols-3 gap-3">
-                        {(['light', 'dark', 'auto'] as const).map((theme) => (
-                          <button
-                            key={theme}
-                            onClick={() => handleSettingChange('appearance', 'theme', theme)}
-                            className={`p-3 rounded-lg border-2 transition-all duration-200 ${
-                              appearanceSettings.theme === theme
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-slate-200 bg-white hover:border-slate-300'
-                            }`}
-                          >
-                            <div className="text-sm font-medium capitalize">{theme}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
 
-                    {/* Color Scheme */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Color Scheme</h3>
-                      <p className="text-slate-600 text-sm mb-3">Select your preferred accent color</p>
-                      <div className="grid grid-cols-4 gap-3">
-                        {(['blue', 'green', 'purple', 'orange'] as const).map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => handleSettingChange('appearance', 'colorScheme', color)}
-                            className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                              appearanceSettings.colorScheme === color
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-slate-200 bg-white hover:border-slate-300'
-                            }`}
-                          >
-                            <div className={`w-6 h-6 rounded-full mx-auto mb-2 bg-${color}-500`}></div>
-                            <div className="text-sm font-medium capitalize">{color}</div>
-                          </button>
-                        ))}
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">Collapsed Sidebar</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.appearance.sidebarCollapsed}
+                          onChange={(e) => handleSettingChange('appearance', 'sidebarCollapsed', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
+                      </label>
                     </div>
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <span className="text-sm font-medium text-gray-700">Compact Mode</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.appearance.compactMode}
+                          onChange={(e) => handleSettingChange('appearance', 'compactMode', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    {/* Layout Options */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            {/* System Tab */}
+            {activeTab === 'system' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">System</h2>
+                  <p className="text-sm text-gray-500">Configure system-level settings and backups.</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Automatic Backups</h3>
+                      <p className="text-xs text-gray-500">Enable automated data backups</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.system.autoBackup}
+                        onChange={(e) => handleSettingChange('system', 'autoBackup', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Backup Frequency</label>
+                    <select
+                      value={settings.system.backupFrequency}
+                      onChange={(e) => handleSettingChange('system', 'backupFrequency', e.target.value)}
+                      className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Integrations Tab */}
+            {activeTab === 'integrations' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Integrations</h2>
+                  <p className="text-sm text-gray-500">Connect with third-party tools.</p>
+                </div>
+                <div className="space-y-4">
+                  {Object.entries(settings.integrations).map(([key, value]) => {
+                    if (key === 'fileStorage') return null; // Handle separately
+                    return (
+                      <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                         <div>
-                          <h3 className="font-semibold text-slate-800">Collapsed Sidebar</h3>
-                          <p className="text-slate-600 text-sm">Minimize sidebar by default</p>
+                          <h3 className="text-sm font-medium text-gray-900 capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </h3>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={appearanceSettings.sidebarCollapsed}
-                            onChange={(e) => handleSettingChange('appearance', 'sidebarCollapsed', e.target.checked)}
+                            checked={value as boolean}
+                            onChange={(e) => handleSettingChange('integrations', key, e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
                         </label>
                       </div>
+                    )
+                  })}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">File Storage Provider</label>
+                    <select
+                      value={settings.integrations.fileStorage}
+                      onChange={(e) => handleSettingChange('integrations', 'fileStorage', e.target.value)}
+                      className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    >
+                      <option value="local">Local Storage</option>
+                      <option value="cloud">Cloud Storage (S3/GCS)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            {/* Website Content Tab */}
+            {activeTab === 'website' && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Website Content</h2>
+                  <p className="text-sm text-gray-500">Manage your landing page content.</p>
+                </div>
+
+                {/* Hero Section */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-md font-medium text-gray-900 mb-4">Hero Section</h3>
+                  {heroContent && (
+                    <form onSubmit={handleHeroUpdate} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
+                        <Input
+                          value={heroContent.tagline}
+                          onChange={(e) => setHeroContent({ ...heroContent, tagline: e.target.value })}
+                          placeholder="e.g. Building Dreams into Reality"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Subtext</label>
+                        <textarea
+                          value={heroContent.subtext}
+                          onChange={(e) => setHeroContent({ ...heroContent, subtext: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:outline-none"
+                          rows={3}
+                          placeholder="Hero description..."
+                        />
+                      </div>
+                      <Button type="submit" loading={heroLoading}>Update Hero</Button>
+                    </form>
+                  )}
+                </div>
+
+                {/* Testimonials Section */}
+                <div>
+                  <h3 className="text-md font-medium text-gray-900 mb-4">Testimonials</h3>
+
+                  {/* Add New */}
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h4 className="text-sm font-medium mb-3">Add New Testimonial</h4>
+                    <form onSubmit={handleAddTestimonial} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        placeholder="Client Name"
+                        value={newTestimonial.name}
+                        onChange={(e) => setNewTestimonial({ ...newTestimonial, name: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Role / Company"
+                        value={newTestimonial.role}
+                        onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })}
+                      />
+                      <div className="md:col-span-2">
+                        <textarea
+                          placeholder="Quote"
+                          value={newTestimonial.quote}
+                          onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                          rows={2}
+                        />
+                      </div>
+                      <Button type="submit" size="sm" variant="secondary" leftIcon={<Plus className="w-4 h-4" />}>Add Testimonial</Button>
+                    </form>
+                  </div>
+
+                  {/* List */}
+                  <div className="space-y-3">
+                    {testimonials.map((t) => (
+                      <div key={t._id} className="flex items-start justify-between p-3 border border-gray-100 rounded-lg bg-white">
                         <div>
-                          <h3 className="font-semibold text-slate-800">Compact Mode</h3>
-                          <p className="text-slate-600 text-sm">Reduce spacing for more content</p>
+                          <p className="font-medium text-sm text-gray-900">{t.name}</p>
+                          <p className="text-xs text-gray-500">{t.role}</p>
+                          <p className="text-sm text-gray-600 mt-1 italic">"{t.quote}"</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={appearanceSettings.compactMode}
-                            onChange={(e) => handleSettingChange('appearance', 'compactMode', e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteTestimonial(t._id)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              )}
-
-              {/* System Tab */}
-              {activeTab === 'system' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-slate-800 mb-6">System Settings</h2>
-                  
-                  <div className="space-y-6">
-                    {/* Auto Backup */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Automatic Backup</h3>
-                        <p className="text-slate-600 text-sm">Automatically backup your data</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.system.autoBackup}
-                          onChange={(e) => handleSettingChange('system', 'autoBackup', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Backup Frequency */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Backup Frequency</h3>
-                      <p className="text-slate-600 text-sm mb-3">How often to create backups</p>
-                      <select
-                        value={settings.system.backupFrequency}
-                        onChange={(e) => handleSettingChange('system', 'backupFrequency', e.target.value)}
-                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 bg-white focus:border-blue-500 focus:outline-none"
-                      >
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                      </select>
-                    </div>
-
-                    {/* Data Retention */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">Data Retention (days)</h3>
-                      <p className="text-slate-600 text-sm mb-3">How long to keep backup data</p>
-                      <select
-                        value={settings.system.dataRetention}
-                        onChange={(e) => handleSettingChange('system', 'dataRetention', parseInt(e.target.value))}
-                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 bg-white focus:border-blue-500 focus:outline-none"
-                      >
-                        <option value={30}>30 days</option>
-                        <option value={90}>90 days</option>
-                        <option value={180}>6 months</option>
-                        <option value={365}>1 year</option>
-                        <option value={730}>2 years</option>
-                      </select>
-                    </div>
-
-                    {/* Debug Mode */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Debug Mode</h3>
-                        <p className="text-slate-600 text-sm">Enable detailed logging for troubleshooting</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.system.debugMode}
-                          onChange={(e) => handleSettingChange('system', 'debugMode', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Integrations Tab */}
-              {activeTab === 'integrations' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-slate-800 mb-6">Integrations</h2>
-                  
-                  <div className="space-y-6">
-                    {/* Slack Integration */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Slack Integration</h3>
-                        <p className="text-slate-600 text-sm">Connect with Slack for notifications</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.integrations.slackIntegration}
-                          onChange={(e) => handleSettingChange('integrations', 'slackIntegration', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Email Integration */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Email Integration</h3>
-                        <p className="text-slate-600 text-sm">Connect with your email provider</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.integrations.emailIntegration}
-                          onChange={(e) => handleSettingChange('integrations', 'emailIntegration', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Calendar Sync */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Calendar Sync</h3>
-                        <p className="text-slate-600 text-sm">Sync with Google Calendar</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.integrations.calendarSync}
-                          onChange={(e) => handleSettingChange('integrations', 'calendarSync', e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    {/* File Storage */}
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                      <h3 className="font-semibold text-slate-800 mb-2">File Storage</h3>
-                      <p className="text-slate-600 text-sm mb-3">Choose where to store uploaded files</p>
-                      <select
-                        value={settings.integrations.fileStorage}
-                        onChange={(e) => handleSettingChange('integrations', 'fileStorage', e.target.value)}
-                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-2 bg-white focus:border-blue-500 focus:outline-none"
-                      >
-                        <option value="local">Local Storage</option>
-                        <option value="cloud">Cloud Storage (AWS S3)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
-} 
+}

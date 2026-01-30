@@ -108,7 +108,7 @@ export interface Report {
   year: number;
   weekStartDate: string;
   weekEndDate: string;
-  
+
   labour: {
     totalWorkers: number;
     workingDays: number;
@@ -124,7 +124,7 @@ export interface Report {
     };
     details: LabourDetail[];
   };
-  
+
   materials: {
     totalCost: number;
     items: MaterialItem[];
@@ -136,12 +136,12 @@ export interface Report {
       status: 'sufficient' | 'low' | 'critical' | 'out-of-stock';
     }>;
   };
-  
+
   equipment: {
     totalCost: number;
     items: EquipmentItem[];
   };
-  
+
   financial: {
     weeklyIncome: number;
     clientPayment?: number;
@@ -157,7 +157,7 @@ export interface Report {
     cashInHand?: number;
     pendingPayments?: number;
   };
-  
+
   progress: {
     percentageComplete: number;
     previousWeekProgress: number;
@@ -170,10 +170,10 @@ export interface Report {
       variance: number;
     }>;
   };
-  
+
   workCompleted: WorkEntry[];
   upcomingWork: UpcomingWork[];
-  
+
   safety: {
     incidentCount: number;
     nearMissCount: number;
@@ -188,14 +188,14 @@ export interface Report {
       remarks?: string;
     }>;
   };
-  
+
   weather: {
     workingDays: number;
     rainDays: number;
     haltDays: number;
     conditions: WeatherCondition[];
   };
-  
+
   quality: {
     testsCompleted: number;
     testsPassed: number;
@@ -210,18 +210,31 @@ export interface Report {
       resolution?: string;
     }>;
   };
-  
+
   issues: Issue[];
   photos?: Array<{ url: string; caption: string; date: string; category: string }>;
   visitors: Visitor[];
   notes: string;
   highlights?: Array<{ type: string; description: string }>;
-  
+
   generatedAt: string;
   lastUpdated: string;
   status: 'draft' | 'submitted' | 'approved' | 'revision-required';
   approvedBy?: string;
   approvedAt?: string;
+
+  workflow?: {
+    currentStep: string;
+    history: Array<{ action: string; by: string; at: string; comments?: string }>;
+    assignedApprover?: string;
+  };
+  version?: number;
+  isLatest?: boolean;
+  budgetSnapshots?: {
+    originalBudget: number;
+    revisedBudget: number;
+    variance: number;
+  };
 }
 
 export interface WeeklySummary {
@@ -255,7 +268,7 @@ export const getReports = async (filters?: { projectId?: string; year?: number; 
   if (filters?.year) params.append('year', String(filters.year));
   if (filters?.weekNumber) params.append('weekNumber', String(filters.weekNumber));
   if (filters?.status) params.append('status', filters.status);
-  
+
   const response = await axios.get(`${API_BASE_URL}?${params}`, { headers: authHeaders() });
   return response.data;
 };
@@ -351,15 +364,49 @@ export const addVisitorEntry = async (reportId: string, entry: Partial<Visitor>)
 };
 
 // Submit report for approval
-export const submitReport = async (reportId: string): Promise<Report> => {
-  const response = await axios.patch(`${API_BASE_URL}/${reportId}/submit`, {}, { headers: authHeaders() });
+export const submitReport = async (reportId: string, comments?: string): Promise<Report> => {
+  const response = await axios.patch(`${API_BASE_URL}/${reportId}/submit`, { comments }, { headers: authHeaders() });
   return response.data.report;
 };
 
 // Approve report
-export const approveReport = async (reportId: string, approvedBy: string): Promise<Report> => {
-  const response = await axios.patch(`${API_BASE_URL}/${reportId}/approve`, { approvedBy }, { headers: authHeaders() });
+export const approveReport = async (reportId: string, comments?: string): Promise<Report> => {
+  const response = await axios.patch(`${API_BASE_URL}/${reportId}/approve`, { comments }, { headers: authHeaders() });
   return response.data.report;
+};
+
+// Reject report
+export const rejectReport = async (reportId: string, reason: string): Promise<Report> => {
+  const response = await axios.patch(`${API_BASE_URL}/${reportId}/reject`, { reason }, { headers: authHeaders() });
+  return response.data.report;
+};
+
+// Analytics
+export interface BudgetAnalysis {
+  projectId: string;
+  currency: string;
+  comparison: {
+    Labour: { budget: number, actual: number };
+    Material: { budget: number, actual: number };
+    Equipment: { budget: number, actual: number };
+    Other: { budget: number, actual: number };
+  };
+  variance: {
+    Labour: number;
+    Material: number;
+    Equipment: number;
+    Other: number;
+  };
+}
+
+export const getBudgetAnalysis = async (projectId: string): Promise<BudgetAnalysis> => {
+  const response = await axios.get(`${API_BASE_URL.replace('/reports', '')}/analytics/budget-vs-actual/${projectId}`, { headers: authHeaders() });
+  return response.data;
+};
+
+export const getRiskMatrix = async (projectId: string): Promise<any> => {
+  const response = await axios.get(`${API_BASE_URL.replace('/reports', '')}/analytics/risk-matrix/${projectId}`, { headers: authHeaders() });
+  return response.data;
 };
 
 // Get weekly summary
@@ -367,7 +414,7 @@ export const getWeeklySummary = async (weekNumber?: number, year?: number): Prom
   const params = new URLSearchParams();
   if (weekNumber) params.append('weekNumber', String(weekNumber));
   if (year) params.append('year', String(year));
-  
+
   const response = await axios.get(`${API_BASE_URL}/summary/weekly?${params}`, { headers: authHeaders() });
   return response.data;
 };
