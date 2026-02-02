@@ -17,7 +17,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Input from '../../components/ui/Input';
 
-const API_BASE = 'https://general-constructor-web-2.onrender.com';
+import { API_BASE } from '../../utils/api';
 
 const Projects: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'showcase'>('pending');
@@ -289,6 +289,7 @@ const Projects: React.FC = () => {
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="sm" onClick={() => setEditingProject(project)}>Edit</Button>
                           {activeTab === 'pending' && <Button variant="ghost" size="sm" onClick={() => handleCompleteProject(project._id)}>Complete</Button>}
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteProject(project._id)}>Delete</Button>
                         </div>
                       </td>
                     </tr>

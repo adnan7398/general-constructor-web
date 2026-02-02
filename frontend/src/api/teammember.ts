@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_BASE } from '../utils/api';
 
 export interface TeamMember {
   _id: string;
@@ -18,8 +19,8 @@ const headers = {
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
 };
-const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/team';
-const API_BASE_URL_USER = 'https://general-constructor-web-2.onrender.com/user';
+const API_BASE_URL = `${API_BASE}/team`;
+const API_BASE_URL_USER = `${API_BASE}/user`;
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
   const response = await axios.get(API_BASE_URL, { headers });
 
@@ -44,7 +45,7 @@ export const getAllTeamMembers = async (): Promise<TeamMember[]> => {
 };
 
 export const getAllProjects = async () => {
-  const res = await axios.get('https://general-constructor-web-2.onrender.com/project/all',{headers});
+  const res = await axios.get(`${API_BASE}/project/all`,{headers});
   return res.data;
 };
 

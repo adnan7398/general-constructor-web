@@ -8,6 +8,9 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
+    // bind dev server to localhost only (hide network "live" link)
+    host: 'localhost',
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

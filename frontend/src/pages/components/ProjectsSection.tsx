@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getShowcaseProjects, Project } from '../../api/projects';
+import { API_BASE } from '../../utils/api';
 
 interface Testimonial {
   id: number;
@@ -9,7 +10,6 @@ interface Testimonial {
   imageUrl: string;
 }
 
-const API_BASE = 'https://general-constructor-web-2.onrender.com';
 
 // Fallback projects if API fails
 const fallbackProjects = [

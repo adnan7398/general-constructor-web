@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_BASE } from '../utils/api';
 
 export interface Resource {
   _id: string;
@@ -31,8 +32,8 @@ const headers = {
   'Content-Type': 'application/json',
 };
 
-const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/resources';
-const PROJECT_API_URL = 'https://general-constructor-web-2.onrender.com/project';
+const API_BASE_URL = `${API_BASE}/resources`;
+const PROJECT_API_URL = `${API_BASE}/project`;
 
 export const getAllResources = async (): Promise<Resource[]> => {
   try {

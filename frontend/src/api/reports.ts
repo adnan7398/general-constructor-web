@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE } from '../utils/api';
 
 const getToken = () => localStorage.getItem('token');
-const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/reports';
+const API_BASE_URL = `${API_BASE}/reports`;
 
 // ============ INTERFACES ============
 

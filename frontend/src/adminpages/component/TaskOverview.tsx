@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE } from '../../utils/api';
 import { CheckSquare, Clock, ListTodo } from 'lucide-react';
 
 type TaskStatus = 'pending' | 'in-progress' | 'completed';
@@ -18,7 +19,7 @@ const TaskOverview: React.FC = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await fetch('https://general-constructor-web-2.onrender.com/project/all', {
+        const res = await fetch(`${API_BASE}/project/all`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
