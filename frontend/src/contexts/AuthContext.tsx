@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+import { API_BASE } from '../utils/api';
+
 interface User {
     _id: string;
     name: string;
@@ -35,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (token) {
                 try {
                     // Fetch user profile to validate token and get role
-                    const response = await fetch('http://localhost:3000/profile/me', {
+                    const response = await fetch(`${API_BASE}/profile/me`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }

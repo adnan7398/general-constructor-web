@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 
+import { API_BASE } from '../utils/api';
+
 const App: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -12,7 +14,7 @@ const App: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const API_BASE_URL = 'http://localhost:3000';
+  const API_BASE_URL = API_BASE;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

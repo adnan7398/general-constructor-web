@@ -339,7 +339,7 @@ export default function ProfilePage() {
               <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-sm mx-auto">
                 {profile?.profileImage ? (
                   <img
-                    src={`http://localhost:3000${profile.profileImage}`}
+                    src={`${API_BASE}${profile.profileImage}`}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { FolderPlus, Upload, Search, Grid, List as ListIcon, ChevronRight, Home, ArrowLeft } from 'lucide-react';
 import FileList from './FileList';
 import { FileItem, FolderItem } from './types';
+import { API_BASE } from '../../utils/api';
 
 interface FileExplorerProps {
     projectId: string;
@@ -22,7 +23,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     const fetchContent = async (folderId: string | null = null) => {
         try {
             setLoading(true);
-            const res = await axios.get(`http://localhost:3000/directory/projects/${projectId}/content`, {
+            const res = await axios.get(`${API_BASE}/directory/projects/${projectId}/content`, {
                 params: { folderId }
             });
             setFolders(res.data.folders);
@@ -75,7 +76,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
         if (!name) return;
 
         try {
-            await axios.post('http://localhost:3000/directory/folders', {
+            await axios.post(`${API_BASE}/directory/folders`, {
                 name,
                 projectId,
                 parentId: currentFolder?._id
@@ -99,7 +100,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
 
         try {
             setIsUploading(true);
-            await axios.post('http://localhost:3000/directory/files', formData, {
+            await axios.post(`${API_BASE}/directory/files`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             fetchContent(currentFolder?._id || null);
@@ -115,7 +116,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     const handleDeleteFolder = async (id: string) => {
         if (!confirm("Are you sure? Folder must be empty.")) return;
         try {
-            await axios.delete(`http://localhost:3000/directory/folders/${id}`);
+            await axios.delete(`${API_BASE}/directory/folders/${id}`);
             fetchContent(currentFolder?._id || null);
         } catch (error: any) {
             alert(error.response?.data?.message || "Error deleting folder");
@@ -125,7 +126,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
     const handleDeleteFile = async (id: string) => {
         if (!confirm("Are you sure you want to delete this file?")) return;
         try {
-            await axios.delete(`http://localhost:3000/directory/files/${id}`);
+            await axios.delete(`${API_BASE}/directory/files/${id}`);
             fetchContent(currentFolder?._id || null);
         } catch (error) {
             alert("Error deleting file");
@@ -233,7 +234,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ projectId }) => {
                         folders={filteredFolders}
                         files={filteredFiles}
                         onFolderClick={handleFolderClick}
-                        onFileClick={(file) => window.open(`http://localhost:3000${file.url}`, '_blank')}
+                        onFileClick={(file) => window.open(`${API_BASE}${file.url}`, '_blank')}
                         onDeleteFolder={handleDeleteFolder}
                         onDeleteFile={handleDeleteFile}
                         viewMode={viewMode}

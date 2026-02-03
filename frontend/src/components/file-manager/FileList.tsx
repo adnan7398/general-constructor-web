@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Folder, MoreVertical, Download, Trash2, File as FileIcon, Image, Film, Music } from 'lucide-react';
 import { FileItem, FolderItem } from './types';
+import { API_BASE } from '../../utils/api';
 
 interface FileListProps {
     folders: FolderItem[];
@@ -97,7 +98,7 @@ const FileList: React.FC<FileListProps> = ({
                             </div>
                             <div className="col-span-1 flex justify-end opacity-0 group-hover:opacity-100 gap-2">
                                 <a
-                                    href={`http://localhost:3000${file.url}`}
+                                    href={`${API_BASE}${file.url}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     onClick={(e) => e.stopPropagation()}
@@ -160,7 +161,7 @@ const FileList: React.FC<FileListProps> = ({
                     </div>
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <a
-                            href={`http://localhost:3000${file.url}`}
+                            href={`${API_BASE}${file.url}`}
                             target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
