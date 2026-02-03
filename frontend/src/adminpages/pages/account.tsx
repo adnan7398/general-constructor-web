@@ -7,6 +7,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
+import { API_BASE } from '../../utils/api';
 
 interface AccountEntry {
   _id?: string;
@@ -16,6 +17,7 @@ interface AccountEntry {
   amount: number;
   Quantity?: number;
   paymentMode?: string;
+  payer?: string;
   description?: string;
   type: 'INCOME' | 'EXPENSE';
   typeofExpense?: 'LABOUR' | 'MATERIAL';
@@ -43,7 +45,7 @@ export default function SiteAccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string>('');
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/account';
+  const API_BASE_URL = `${API_BASE}/account`;
 
   if (!token) {
     // Ideally use a redirect hook or component here to avoid render-time side effects
@@ -173,6 +175,41 @@ export default function SiteAccountPage() {
     }
   };
 
+  const deleteSite = async () => {
+    if (!siteName) {
+      alert('No site selected');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the entire site "${siteName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${siteName}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        console.log('Site deleted successfully');
+        setAvailableSites(prev => prev.filter(site => site !== siteName));
+        setSiteName(availableSites.find(site => site !== siteName) || '');
+        setEntries([]);
+        alert(`Site "${siteName}" has been deleted.`);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete site');
+      }
+    } catch (error: any) {
+      console.error('Error:', error);
+      alert(error.message || 'Failed to delete site');
+    }
+  };
+
   const handleClick = () => {
     navigator('/totalaccount');
   }
@@ -180,7 +217,7 @@ export default function SiteAccountPage() {
   const handleAddEntry = async () => {
     try {
       // Validate required fields
-      if (!newEntry.date || !newEntry.type || !newEntry.typeofExpense || !newEntry.category || !newEntry.amount || newEntry.Quantity === undefined) {
+      if (!newEntry.date || !newEntry.type || !newEntry.typeofExpense || !newEntry.category || newEntry.amount === undefined || newEntry.Quantity === undefined) {
         alert('Please fill in all required fields: Date, Type, Type of Expense, Category, Amount, and Quantity');
         return;
       }
@@ -193,9 +230,10 @@ export default function SiteAccountPage() {
           typeofExpense: newEntry.typeofExpense,
           category: newEntry.category,
           particular: newEntry.particular || '',
-          amount: newEntry.amount,
-          Quantity: newEntry.Quantity,
-          paymentMode: newEntry.paymentMode || ''
+          amount: Number(newEntry.amount),
+          Quantity: Number(newEntry.Quantity),
+          paymentMode: newEntry.paymentMode || '',
+          payer: newEntry.payer || ''
         };
 
         const response = await fetch(`${API_BASE_URL}/${siteName}`, {
@@ -217,20 +255,32 @@ export default function SiteAccountPage() {
 
         // Update local state
         setEntries(prev => prev.map(entry =>
-          entry._id === editingEntryId ? { ...entry, ...newEntry } : entry
+          entry._id === editingEntryId ? { ...entry, ...entryToSend, _id: entry._id } : entry
         ));
 
         setIsEditing(false);
         setEditingEntryId('');
       } else {
         // Add new entry
+        const newEntryToSend = {
+          date: newEntry.date,
+          type: newEntry.type,
+          typeofExpense: newEntry.typeofExpense,
+          category: newEntry.category,
+          particular: newEntry.particular || '',
+          amount: Number(newEntry.amount),
+          Quantity: Number(newEntry.Quantity),
+          paymentMode: newEntry.paymentMode || '',
+          payer: newEntry.payer || ''
+        };
+
         const response = await fetch(`${API_BASE_URL}/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ siteName, entries: [newEntry] })
+          body: JSON.stringify({ siteName, entries: [newEntryToSend] })
         });
 
         if (!response.ok) {
@@ -239,7 +289,7 @@ export default function SiteAccountPage() {
         }
 
         const result = await response.json();
-        setEntries(prev => [...prev, newEntry as AccountEntry]);
+        setEntries(prev => [...prev, newEntryToSend as AccountEntry]);
       }
 
       setNewEntry({});
@@ -284,6 +334,11 @@ export default function SiteAccountPage() {
             <Button size="sm" variant="outline" onClick={() => setShowAddSite(!showAddSite)}>
               <Plus className="w-4 h-4" />
             </Button>
+            {siteName && (
+              <Button size="sm" variant="destructive" onClick={deleteSite} title="Delete this site">
+                Delete Site
+              </Button>
+            )}
           </div>
           {showAddSite && (
             <div className="flex items-center gap-2">
@@ -406,6 +461,7 @@ export default function SiteAccountPage() {
                 <th className="px-6 py-3 font-medium text-right">Amount</th>
                 <th className="px-6 py-3 font-medium">Qty</th>
                 <th className="px-6 py-3 font-medium">Mode</th>
+                <th className="px-6 py-3 font-medium">Who Give</th>
                 <th className="px-6 py-3 font-medium text-center">Type</th>
                 <th className="px-6 py-3 font-medium text-right">Actions</th>
               </tr>
@@ -430,6 +486,7 @@ export default function SiteAccountPage() {
                   </td>
                   <td className="px-6 py-4 text-gray-600">{entry.Quantity || '-'}</td>
                   <td className="px-6 py-4 text-gray-600">{entry.paymentMode || '-'}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{entry.payer || '-'}</td>
                   <td className="px-6 py-4 text-center">
                     <Badge variant={entry.type === 'INCOME' ? 'success' : 'error'} size="sm">
                       {entry.type}
@@ -453,7 +510,7 @@ export default function SiteAccountPage() {
               ))}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                     <div className="flex flex-col items-center gap-2">
                       <Receipt className="w-8 h-8 text-gray-400" />
                       <p>No entries found for this site.</p>
@@ -566,6 +623,14 @@ export default function SiteAccountPage() {
                     <option value="Cheque">Cheque</option>
                     <option value="Credit">Credit</option>
                   </select>
+                </div>
+                <div className="col-span-12 md:col-span-4 space-y-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Who Give</label>
+                  <Input
+                    placeholder="Name of payer/person"
+                    value={newEntry.payer || ''}
+                    onChange={(e) => setNewEntry({ ...newEntry, payer: e.target.value })}
+                  />
                 </div>
               </div>
             </div>

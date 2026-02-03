@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_BASE } from '../utils/api';
 
 export interface Project {
   _id: string;
@@ -25,7 +26,7 @@ export interface Project {
 }
 
 const getToken = () => localStorage.getItem('token');
-const API_BASE_URL = 'http://localhost:3000/project';
+const API_BASE_URL = `${API_BASE}/project`;
 
 export const getAllProjects = async (): Promise<Project[]> => {
   try {

@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 const accountRoutes = express.Router();
 import SiteAccount from '../models/siteaccounthistory.js';
 import AdminMiddleware from '../middleware/adminmiddleware.js';
@@ -135,21 +136,14 @@ accountRoutes.put('/:siteName', async (req, res) => {
       site.entries[index] = { ...newEntry, _id: existingEntry._id };
     }
 
-    console.log('About to save site with entries:', site.entries);
-    
-    try {
-    await site.save();
-      console.log('Site saved successfully');
+    await site.save({ validateBeforeSave: false });
     res.status(200).json({ message: 'Entry updated successfully', site });
-    } catch (saveError) {
-      console.error('Save error:', saveError);
-      res.status(500).json({ error: saveError.message });
-    }
   } catch (err) {
     console.error('Error updating or adding entry:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 accountRoutes.delete('/:siteName/:entryId', async (req, res) => {
   try {
     const { siteName, entryId } = req.params;
@@ -169,13 +163,37 @@ accountRoutes.delete('/:siteName/:entryId', async (req, res) => {
     }
 
     site.entries.splice(entryIndex, 1);
-    await site.save({validateBeforeSave: false});
+    await site.save({ validateBeforeSave: false });
     res.status(200).json({ message: 'Entry deleted successfully', site });
   } catch (err) {
     console.error('Error deleting entry:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
+// Delete entire site
+accountRoutes.delete('/:siteName', async (req, res) => {
+  try {
+    const { siteName } = req.params;
+
+    if (!siteName) {
+      return res.status(400).json({ error: 'siteName is required' });
+    }
+
+    const result = await SiteAccount.findOneAndDelete({ siteName });
+
+    if (!result) {
+      return res.status(404).json({ error: 'Site not found' });
+    }
+
+    res.status(200).json({ message: 'Site deleted successfully', site: result });
+  } catch (err) {
+    console.error('Error deleting site:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get site entries
 accountRoutes.get('/:siteName', async (req, res) => {
   try {
     const { siteName } = req.params;

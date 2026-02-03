@@ -1,12 +1,7 @@
 import axios from 'axios';
+import { API_BASE } from '../utils/api';
 
-const getQuotesBase = () => {
-  const env = import.meta.env.VITE_API_BASE_URL;
-  if (env) return `${String(env).replace(/\/$/, '')}/quotes`;
-  if (import.meta.env.DEV) return '/api/quotes'; // Vite proxy → localhost:3000
-  return 'https://general-constructor-web-2.onrender.com/quotes';
-};
-const API_BASE_URL = getQuotesBase();
+const API_BASE_URL = `${API_BASE}/quotes`;
 
 export interface Quote {
   _id: string;

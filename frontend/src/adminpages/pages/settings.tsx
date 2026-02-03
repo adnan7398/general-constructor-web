@@ -19,6 +19,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
 import { getHeroContent, updateHeroContent, getTestimonials, createTestimonial, deleteTestimonial } from '../../api/website';
+import { API_BASE } from '../../utils/api';
 import { Camera, Trash2, Plus } from 'lucide-react';
 
 
@@ -95,7 +96,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/settings';
+  const API_BASE_URL = `${API_BASE}/settings`;
 
   useEffect(() => {
     if (token) {
@@ -232,7 +233,7 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch('https://general-constructor-web-2.onrender.com/profile/me/change-password', {
+      const response = await fetch(`${API_BASE}/profile/me/change-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

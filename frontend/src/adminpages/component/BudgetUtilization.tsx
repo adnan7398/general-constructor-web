@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE } from '../../utils/api';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface BudgetSite {
@@ -13,7 +14,7 @@ const BudgetUtilization: React.FC = () => {
 
   const fetchBudgetData = async () => {
     try {
-      const res = await fetch('https://general-constructor-web-2.onrender.com/account/site', {
+      const res = await fetch(`${API_BASE}/account/site`, {
         headers: {
           authorization: `Bearer ${localStorage.getItem('token')}`,
         },

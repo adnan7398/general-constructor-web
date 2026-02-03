@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { getShowcaseProjects, Project } from '../../api/projects';
+import { API_BASE } from '../../utils/api';
 
-const API_BASE = 'https://general-constructor-web-2.onrender.com';
 
 const Portfolio = () => {
     const categories = ["All", "Residential", "Commercial", "Infrastructure"];

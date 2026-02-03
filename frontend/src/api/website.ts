@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_BASE = 'https://general-constructor-web-2.onrender.com';
+import { API_BASE } from '../utils/api';
 
 // Hero Content
 export const getHeroContent = async () => {

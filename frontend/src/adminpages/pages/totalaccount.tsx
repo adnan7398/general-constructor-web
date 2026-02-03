@@ -15,6 +15,7 @@ import { exportTotalAccountToExcel, exportTotalAccountToPDF } from '../../utils/
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import { API_BASE } from '../../utils/api';
 
 const Account: React.FC = () => {
     const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Account: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const token = localStorage.getItem('token');
-    const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/account';
+    const API_BASE_URL = `${API_BASE}/account`;
     const header = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
@@ -291,12 +292,13 @@ const Account: React.FC = () => {
                                                                     </td>
                                                                     <td className="px-4 py-2 text-gray-600">{entry.category}</td>
                                                                     <td className="px-4 py-2 text-gray-900 font-medium">{entry.particular}</td>
+                                                                    <td className="px-4 py-2 text-gray-600 text-xs">{entry.payer || '-'}</td>
                                                                     <td className="px-4 py-2 text-right text-gray-600">{formatCurrency(entry.amount)}</td>
                                                                 </tr>
                                                             ))}
                                                             {filteredEntries(siteAccounts.find(s => s._id === site.siteId)?.entries || []).length === 0 && (
                                                                 <tr>
-                                                                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No entries found matching filter.</td>
+                                                                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No entries found matching filter.</td>
                                                                 </tr>
                                                             )}
                                                         </tbody>

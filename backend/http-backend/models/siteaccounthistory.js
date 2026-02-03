@@ -10,6 +10,7 @@ const entrySchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   Quantity: { type: Number, required: true },
   paymentMode: { type: String },
+  payer: { type: String }, // Who gave/paid
 }, { _id: true });
 
 const siteAccountSchema = new mongoose.Schema({

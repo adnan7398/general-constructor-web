@@ -18,6 +18,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../../utils/api';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -67,7 +68,7 @@ export default function ProfilePage() {
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'https://general-constructor-web-2.onrender.com/profile';
+  const API_BASE_URL = `${API_BASE}/profile`;
 
   useEffect(() => {
     if (token) {
