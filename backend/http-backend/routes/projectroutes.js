@@ -44,6 +44,7 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
 // PUT update project (Admin only)
 router.put('/:id', verifyToken, isAdmin, async (req, res) => {
   try {
+    console.log('PUT Project Body:', req.body); // DEBUG
     const updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updatedProject) return res.status(404).json({ message: 'Project not found' });
     res.json(updatedProject);
