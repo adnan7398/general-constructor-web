@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Shield, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const App: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +45,9 @@ const App: React.FC = () => {
         throw new Error(data.message || 'Authentication failed');
       }
 
-      localStorage.setItem('token', data.token);
+      // Use auth context login to update global state immediately
+      login(data.token, data.user);
+
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       }

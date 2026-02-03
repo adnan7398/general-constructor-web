@@ -4,6 +4,7 @@ export interface Project {
   _id: string;
   title: string; // Backend uses title
   name?: string; // Legacy/Frontend state
+  category?: string; // Backend uses category
   description?: string;
   projectType: 'commercial' | 'residential' | 'industrial' | 'infrastructure' | 'public';
   startDate?: string;

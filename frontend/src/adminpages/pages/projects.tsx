@@ -85,7 +85,15 @@ const Projects: React.FC = () => {
 
   const handleUpdateProject = async (id: string) => {
     if (!editingProject) return;
-    await updateProject(id, editingProject);
+
+    // Ensure backend compatible payload
+    const payload = {
+      ...editingProject,
+      title: editingProject.title || editingProject.name,
+      category: editingProject.category || editingProject.projectType,
+    };
+
+    await updateProject(id, payload);
     loadAllProjects();
     loadProjects(); // Refresh the list view
     setEditingProject(null);
@@ -323,25 +331,67 @@ const Projects: React.FC = () => {
                   onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Video URL</label>
-                <Input
-                  value={editingProject.videoUrl || ''}
-                  onChange={(e) => setEditingProject({ ...editingProject, videoUrl: e.target.value })}
-                  placeholder="e.g. YouTube/Vimeo link"
-                />
-              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Type"
-                  value={editingProject.projectType || ''}
-                  onChange={(e) => setEditingProject({ ...editingProject, projectType: e.target.value as Project['projectType'] })}
+                  label="Location"
+                  value={editingProject.location || ''}
+                  onChange={(e) => setEditingProject({ ...editingProject, location: e.target.value })}
+                  placeholder="City, Country"
                 />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-sm"
+                    value={editingProject.startDate ? new Date(editingProject.startDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setEditingProject({ ...editingProject, startDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Type</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-sm"
+                    value={editingProject.category || editingProject.projectType || 'Commercial'}
+                    onChange={(e) => setEditingProject({ ...editingProject, category: e.target.value as any, projectType: e.target.value as any })}
+                  >
+                    <option value="Commercial">Commercial</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                    <option value="Renovation">Renovation</option>
+                    <option value="Interior">Interior</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-sm"
+                    value={editingProject.status || 'upcoming'}
+                    onChange={(e) => setEditingProject({ ...editingProject, status: e.target.value as any })}
+                  >
+                    <option value="upcoming">Upcoming</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Budget"
                   type="number"
                   value={editingProject.budget || ''}
                   onChange={(e) => setEditingProject({ ...editingProject, budget: Number(e.target.value) })}
+                />
+                <Input
+                  label="Video URL"
+                  value={editingProject.videoUrl || ''}
+                  onChange={(e) => setEditingProject({ ...editingProject, videoUrl: e.target.value })}
+                  placeholder="e.g. YouTube/Vimeo"
                 />
               </div>
             </div>
