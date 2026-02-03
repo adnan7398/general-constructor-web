@@ -3,7 +3,7 @@ dotenv.config();
 
 import mongoose from 'mongoose';
 import XLSX from 'xlsx';
-import Project from '../models/project.js';
+import Project from '../models/Project.js';
 import TeamMember from '../models/teammember.js';
 
 async function run() {
@@ -45,7 +45,7 @@ async function run() {
         const tm = new TeamMember({
           name: `Team - ${siteName}`,
           role: 'Supervisor',
-          contact: { email: `team+${siteName.replace(/\s+/g,'').toLowerCase()}@example.com` },
+          contact: { email: `team+${siteName.replace(/\s+/g, '').toLowerCase()}@example.com` },
           assignedProject: [existing._id]
         });
         await tm.save();
@@ -67,7 +67,7 @@ async function run() {
     const tm = new TeamMember({
       name: `Team - ${siteName}`,
       role: 'Supervisor',
-      contact: { email: `team+${siteName.replace(/\s+/g,'').toLowerCase()}@example.com` },
+      contact: { email: `team+${siteName.replace(/\s+/g, '').toLowerCase()}@example.com` },
       assignedProject: [proj._id]
     });
     await tm.save();

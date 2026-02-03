@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import Directory from '../models/directory.js';
 import File from '../models/file.js';
-import Project from '../models/project.js';
+import Project from '../models/Project.js';
 
 const router = express.Router();
 

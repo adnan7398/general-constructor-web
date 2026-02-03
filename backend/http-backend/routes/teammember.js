@@ -1,6 +1,6 @@
 import express from 'express';
 import TeamMember from '../models/teammember.js';
-import Project from '../models/project.js';
+import Project from '../models/Project.js';
 import adminMiddleware from '../middleware/adminmiddleware.js';
 const TeamRouter = express.Router();
 TeamRouter.use(express.json());

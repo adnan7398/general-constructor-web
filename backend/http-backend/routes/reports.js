@@ -1,6 +1,6 @@
 import express from 'express';
 import Report from '../models/report.js';
-import Project from '../models/project.js';
+import Project from '../models/Project.js';
 import AdminMiddleware from '../middleware/adminmiddleware.js';
 
 const reportRoutes = express.Router();

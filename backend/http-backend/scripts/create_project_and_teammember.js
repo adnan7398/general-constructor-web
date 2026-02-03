@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import mongoose from 'mongoose';
-import Project from '../models/project.js';
+import Project from '../models/Project.js';
 import TeamMember from '../models/teammember.js';
 
 async function run() {

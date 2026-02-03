@@ -4,7 +4,7 @@ dotenv.config();
 import mongoose from 'mongoose';
 import XLSX from 'xlsx';
 import User from '../models/admin.js';
-import Project from '../models/project.js';
+import Project from '../models/Project.js';
 
 async function run() {
   const filePath = process.argv[2] || process.env.IMPORT_XLSX;
