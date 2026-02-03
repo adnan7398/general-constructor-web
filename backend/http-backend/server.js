@@ -59,8 +59,8 @@ mongoose
   });
 
 /* server */
-// Bind server to localhost only to avoid exposing on network interfaces
-const HOST = process.env.HOST || '127.0.0.1';
+// Bind to all network interfaces for Render deployment
+const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`Server running on ${HOST}:${PORT}`);
 });
